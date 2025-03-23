@@ -5,6 +5,20 @@
 ### Project Overview
 EasyRAG is a lightweight knowledge base retrieval system based on vector database, specifically designed for local deployment with minimal hardware requirements. The system incorporates modern data governance principles and provides a user-friendly web interface that supports importing, chunking, and retrieving various file formats. It utilizes Retrieval-Augmented Generation (RAG) technology for effective management and retrieval of large-scale documents, while ensuring data quality, security, and traceability.
 
+### Interface Preview
+
+#### Main Interface
+![Main Interface](images/main_interface.png)
+
+#### File Upload
+![File Upload](images/file_upload.png)
+
+#### Knowledge Base Search
+![Knowledge Base Search](images/search_interface.png)
+
+#### Intelligent Chat
+![Intelligent Chat](images/chat_interface.png)
+
 ### Core Advantages
 - 🚀 Lightweight Deployment
   - Full local deployment support
