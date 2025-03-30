@@ -393,130 +393,171 @@ class RAGService:
                 progress_callback(100, f"添加失败：{str(e)}")
             return False
     
-    def search(self, kb_name: str, query: str, top_k: int = 5, use_rerank: bool = True, remove_duplicates: bool = True) -> List[Dict[str, Any]]:
-        """
-        在知识库中搜索与查询最相关的文档
+    def list_files(self, kb_name: str) -> List[Dict[str, Any]]:
+        """获取知识库中的所有文件信息"""
+        return self.vector_db.list_files(kb_name)
         
-        Args:
+    def update_file_importance(self, kb_name: str, file_name: str, importance_factor: float) -> bool:
+        """更新文件的重要性系数
+        
+        参数:
+            kb_name: 知识库名称
+            file_name: 文件名
+            importance_factor: 重要性系数 (0.1-5.0)
+            
+        返回:
+            更新是否成功
+        """
+        try:
+            # 确保系数在有效范围内
+            if importance_factor < 0.1:
+                importance_factor = 0.1
+            elif importance_factor > 5.0:
+                importance_factor = 5.0
+                
+            # 更新文件元数据
+            return self.vector_db.update_file_metadata(
+                kb_name, 
+                file_name, 
+                {"importance_coefficient": importance_factor}
+            )
+        except Exception as e:
+            logger.error(f"更新文件重要性系数失败: {str(e)}")
+            logger.exception(e)
+            return False
+            
+    def search(self, kb_name: str, query: str, top_k: int = 5, 
+               use_rerank: bool = True, remove_duplicates: bool = True,
+               filter_criteria: str = "") -> List[Dict[str, Any]]:
+        """搜索知识库
+        
+        参数:
             kb_name: 知识库名称
             query: 查询文本
-            top_k: 返回的最相似文档数量
-            use_rerank: 是否使用重排序模型进一步优化结果
-            remove_duplicates: 是否移除重复结果
+            top_k: 返回的最大结果数
+            use_rerank: 是否使用重排序
+            remove_duplicates: 是否去除重复内容
+            filter_criteria: 过滤条件
             
-        Returns:
-            List[Dict]: 搜索结果列表，每个结果包含文档内容和相似度分数
+        返回:
+            检索结果列表
         """
-        if not self.vector_db.collection_exists(kb_name):
-            logger.error(f"知识库 {kb_name} 不存在")
+        logger.info(f"搜索知识库 {kb_name}, 查询: {query}, top_k: {top_k}, 使用重排序: {use_rerank}")
+        
+        if not self.vector_db or not self.embedding_model:
+            raise Exception("向量数据库或嵌入模型未初始化")
+            
+        if not self.vector_db.kb_exists(kb_name):
+            logger.warning(f"知识库 {kb_name} 不存在")
             return []
             
+        # 将查询转换为向量
         try:
-            # 将查询文本转换为向量
-            query_vector = np.array(get_embedding(query))
+            query_vector = self.embedding_model.get_embedding(query)
+        except Exception as e:
+            logger.error(f"查询向量化失败: {str(e)}")
+            logger.exception(e)
+            return []
             
-            # 在向量数据库中搜索
-            # 为重排序和去重获取更多候选
-            search_top_k = top_k * 3 if (use_rerank or remove_duplicates) else top_k
-            indices, similarities, metadata_list = self.vector_db.search(kb_name, query_vector, search_top_k)
+        # 向量搜索，获取更多结果用于重排序
+        search_top_k = top_k * 3 if use_rerank else top_k
+        vectors, metadata_list = self.vector_db.search(kb_name, query_vector, search_top_k, filter_criteria)
+        
+        if not vectors or not metadata_list:
+            logger.info(f"未找到匹配结果")
+            return []
             
-            # 检查搜索结果
-            if not indices or len(indices) == 0:
-                logger.warning(f"在知识库 {kb_name} 中未找到与查询 '{query}' 相关的内容")
-                return []
+        # 应用重要性系数调整相关度分数
+        for i, metadata in enumerate(metadata_list):
+            # 提取重要性系数，默认为1.0
+            importance_coef = metadata.get("metadata", {}).get("importance_coefficient", 1.0)
             
-            # 提取文档文本
-            documents = [meta.get("text", "") for meta in metadata_list]
-            logger.info(f"向量搜索返回了 {len(documents)} 条结果")
+            # 确保系数在有效范围内
+            if not isinstance(importance_coef, (int, float)) or importance_coef <= 0:
+                importance_coef = 1.0
+                
+            # 调整分数
+            metadata_list[i]["score"] = metadata_list[i]["score"] * float(importance_coef)
             
-            results = []
-            
-            # 如果启用重排序且有足够的结果
-            if use_rerank and documents:
-                logger.info(f"使用重排序模型对 {len(documents)} 条结果进行重排序")
-                try:
-                    # 使用重排序模型
+        # 如果使用重排序，则应用重排序模型
+        if use_rerank and len(metadata_list) > 0:
+            try:
+                documents = [meta.get("text", "") for meta in metadata_list]
+                logger.info(f"向量搜索返回了 {len(documents)} 条结果")
+                
+                # 使用重排序模型
+                if rerank_model_loaded():
+                    logger.info(f"使用重排序模型对 {len(documents)} 条结果进行重排序")
+                    # 获取重排序结果
                     ranked_results = reranker(query, documents)
                     
                     # 重新组织结果
-                    seen_texts = set() if remove_duplicates else None
-                    
-                    for i, (doc, score) in enumerate(ranked_results):
-                        # 跳过重复文本
-                        if remove_duplicates:
-                            doc_text = doc.strip()
-                            if not doc_text or doc_text in seen_texts:
-                                logger.info(f"跳过重复文本: {doc_text[:30]}...")
-                                continue
-                            seen_texts.add(doc_text)
+                    reranked_metadata = []
+                    for doc, score in ranked_results:
+                        # 找到原始文档的索引
+                        original_index = documents.index(doc)
+                        orig_metadata = metadata_list[original_index]
                         
-                        # 找到对应的原始元数据
-                        try:
-                            original_index = documents.index(doc)
-                            metadata = metadata_list[original_index]
-                        except ValueError:
-                            logger.warning(f"无法找到文档的原始元数据: {doc[:50]}...")
-                            metadata = {"text": doc}
+                        # 提取重要性系数
+                        importance_coef = orig_metadata.get("metadata", {}).get("importance_coefficient", 1.0)
+                        if not isinstance(importance_coef, (int, float)) or importance_coef <= 0:
+                            importance_coef = 1.0
+                            
+                        # 应用重要性系数到重排序分数
+                        adjusted_score = score * float(importance_coef)
                         
-                        results.append({
-                            "text": doc,
-                            "score": float(score),
-                            "metadata": metadata
-                        })
+                        # 创建新的元数据项
+                        metadata_item = orig_metadata.copy()
+                        metadata_item["score"] = adjusted_score
+                        reranked_metadata.append(metadata_item)
+                    
+                    # 按分数降序排序
+                    reranked_metadata.sort(key=lambda x: x["score"], reverse=True)
+                    
+                    # 只保留top_k个结果
+                    metadata_list = reranked_metadata[:top_k]
+                else:
+                    logger.warning("重排序模型未加载，使用原始向量搜索结果")
+                    metadata_list = metadata_list[:top_k]
+            except Exception as e:
+                logger.error(f"重排序失败: {str(e)}")
+                logger.exception(e)
+                metadata_list = metadata_list[:top_k]
+        else:
+            # 不使用重排序，直接截取top_k个结果
+            metadata_list = metadata_list[:top_k]
+            
+        # 如果需要去重，则移除内容相似的结果
+        if remove_duplicates:
+            try:
+                unique_results = []
+                unique_contents = set()
+                
+                for item in metadata_list:
+                    content = item.get("text", "").strip()
+                    # 创建一个简单的签名用于去重 (前100个字符)
+                    content_signature = content[:100]
+                    
+                    if content_signature not in unique_contents:
+                        unique_contents.add(content_signature)
+                        unique_results.append(item)
                         
-                        # 如果已经收集了足够的不重复结果，就停止
-                        if len(results) >= top_k:
-                            break
+                metadata_list = unique_results
+            except Exception as e:
+                logger.error(f"去除重复内容失败: {str(e)}")
+                logger.exception(e)
                 
-                except Exception as e:
-                    logger.error(f"重排序过程中发生错误: {str(e)}")
-                    # 如果重排序失败，回退到向量搜索结果
-                    use_rerank = False
-                
-            # 不使用重排序，或者重排序失败，直接返回向量搜索结果
-            if not use_rerank or not results:
-                logger.info("使用向量搜索结果")
-                seen_texts = set() if remove_duplicates else None
-                
-                for i, (idx, sim, meta) in enumerate(zip(indices, similarities, metadata_list)):
-                    doc_text = meta.get("text", "").strip()
-                    
-                    # 跳过重复文本
-                    if remove_duplicates:
-                        if not doc_text or doc_text in seen_texts:
-                            logger.info(f"跳过重复文本: {doc_text[:30]}...")
-                            continue
-                        seen_texts.add(doc_text)
-                    
-                    results.append({
-                        "text": doc_text,
-                        "score": float(sim * 100),  # 转换为百分比
-                        "metadata": meta
-                    })
-                    
-                    # 如果已经收集了足够的不重复结果，就停止
-                    if len(results) >= top_k:
-                        break
+        # 格式化最终结果
+        formatted_results = []
+        for item in metadata_list:
+            result = {
+                "content": item.get("text", ""),
+                "score": round(item.get("score", 0), 3),
+                "metadata": item.get("metadata", {})
+            }
+            formatted_results.append(result)
             
-            logger.info(f"最终返回 {len(results)} 条结果")
-            return results[:top_k]
-            
-        except Exception as e:
-            logger.error(f"搜索知识库 {kb_name} 时出错: {str(e)}")
-            logger.exception(e)
-            return []
-    
-    def list_files(self, kb_name: str) -> List[Dict[str, Any]]:
-        """
-        获取知识库中的所有文件信息
-        
-        Args:
-            kb_name: 知识库名称
-            
-        Returns:
-            List[Dict]: 文件信息列表
-        """
-        return self.vector_db.list_files(kb_name)
+        return formatted_results
     
     def get_file_info(self, kb_name: str, file_name: str) -> Dict[str, Any]:
         """

@@ -5,8 +5,23 @@ import sys
 import uuid
 import os.path
 import time
+import locale
 from urllib.parse import quote
 from typing import List, Dict, Any, Optional, Union
+
+# 设置默认编码为UTF-8
+if sys.platform.startswith('win'):
+    # 在Windows下设置控制台编码
+    os.system('chcp 65001 > nul')
+    # 设置Python的默认编码
+    if sys.getdefaultencoding() != 'utf-8':
+        import importlib
+        importlib.reload(sys)
+        sys.setdefaultencoding('utf-8')  # 可能在新版Python中无效，但尝试设置
+
+# 输出当前系统编码信息
+print(f"系统默认编码: {locale.getpreferredencoding()}")
+print(f"Python默认编码: {sys.getdefaultencoding()}")
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +39,9 @@ from main import RAGService, DocumentProcessor
 # 添加进度跟踪字典
 # 格式: {task_id: {"status": "processing/completed/failed", "progress": 0-100, "message": "处理中..."}}
 processing_tasks = {}
+
+# 导入DeepSeek LLM模型
+from core.llm_model import get_llm_model
 
 # 定义API模型
 class KnowledgeBaseCreate(BaseModel):
@@ -53,6 +71,14 @@ class FileInfo(BaseModel):
     kb_name: str
     file_path: str
     file_name: Optional[str] = None
+
+# 添加聊天相关模型
+class ChatQuery(BaseModel):
+    kb_name: str
+    query: str
+    history: List[Dict[str, str]] = []
+    top_k: int = 3
+    temperature: float = 0.1
 
 # 初始化FastAPI应用
 app = FastAPI(title="知识库管理API", description="提供知识库管理和检索的RESTful API")
@@ -165,6 +191,7 @@ async def get_processing_progress(task_id: str):
         "status": "success",
         "data": processing_tasks[task_id]
     }
+
 @app.post("/kb/upload")
 async def upload_files(
     kb_name: str = Form(...),
@@ -292,7 +319,6 @@ async def upload_files(
                         chunk_overlap=chunk_overlap,
                         progress_callback=update_progress
                     )
-                    print(33333333333, document)
                     # 使用RAGService添加文档到知识库
                     processing_tasks[task_id]["message"] = f"添加文件 {orig_filename} 到知识库..."
                     success = rag_service.add_documents(
@@ -1104,6 +1130,88 @@ async def search_knowledge_base_debug(query: SearchQuery):
     except Exception as e:
         error_trace = traceback.format_exc()
         raise HTTPException(status_code=500, detail=f"搜索知识库失败: {str(e)}\n{error_trace}")
+
+@app.post("/kb/chat")
+async def chat_with_knowledge_base(query: ChatQuery):
+    """与知识库对话"""
+    try:
+        # 检查必要的组件是否初始化
+        rag_service = RAGService()
+        
+        # 检查知识库是否存在
+        if not rag_service.kb_exists(query.kb_name):
+            return {"status": "error", "message": f"知识库 {query.kb_name} 不存在"}
+            
+        # 获取历史对话格式化
+        history_msgs = []
+        if query.history:
+            for msg in query.history:
+                if isinstance(msg, dict) and "role" in msg and "content" in msg:
+                    history_msgs.append(msg)
+        
+        # 调用RAG服务进行知识库对话
+        result = rag_service.chat_with_kb(
+            kb_name=query.kb_name,
+            query=query.query,
+            history=history_msgs,
+            top_k=query.top_k,
+            temperature=query.temperature
+        )
+        
+        return {"status": "success", "answer": result}
+    except Exception as e:
+        error_msg = f"与知识库对话失败: {str(e)}"
+        error_trace = traceback.format_exc()
+        print(f"{error_msg}\n{error_trace}")
+        return {"status": "error", "message": error_msg}
+
+class ImportanceUpdate(BaseModel):
+    kb_name: str
+    file_name: str
+    importance_factor: float
+
+@app.post("/kb/set_importance")
+async def set_file_importance(request: ImportanceUpdate):
+    """设置文件的重要性系数"""
+    try:
+        # 检查必要的组件是否初始化
+        rag_service = RAGService()
+        
+        # 检查知识库是否存在
+        if not rag_service.kb_exists(request.kb_name):
+            return {"status": "error", "message": f"知识库 {request.kb_name} 不存在"}
+        
+        # 检查参数有效性
+        if request.importance_factor < 0.1 or request.importance_factor > 5.0:
+            return {"status": "error", "message": "重要性系数必须在0.1到5.0之间"}
+        
+        # 检查文件是否存在
+        files = rag_service.list_files(request.kb_name)
+        file_exists = False
+        for file in files:
+            if "file_name" in file and file["file_name"] == request.file_name:
+                file_exists = True
+                break
+        
+        if not file_exists:
+            return {"status": "error", "message": f"文件 {request.file_name} 不存在于知识库 {request.kb_name} 中"}
+        
+        # 更新文件重要性系数
+        success = rag_service.update_file_importance(
+            kb_name=request.kb_name,
+            file_name=request.file_name,
+            importance_factor=request.importance_factor
+        )
+        
+        if success:
+            return {"status": "success", "message": f"成功设置文件 {request.file_name} 的重要性系数为 {request.importance_factor}"}
+        else:
+            return {"status": "error", "message": "更新重要性系数失败"}
+    except Exception as e:
+        error_msg = f"设置文件重要性系数失败: {str(e)}"
+        error_trace = traceback.format_exc()
+        print(f"{error_msg}\n{error_trace}")
+        return {"status": "error", "message": error_msg}
 
 def update_processing_task(task_id: str, progress: int, message: str):
     """更新任务处理状态"""

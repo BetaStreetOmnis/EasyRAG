@@ -5,8 +5,18 @@ import traceback
 import requests
 import json
 import time
+import sys
+import locale
 from typing import List, Dict, Any
 
+# 设置默认编码为UTF-8
+if sys.platform.startswith('win'):
+    # 在Windows下设置控制台编码
+    os.system('chcp 65001 > nul')
+
+# 输出当前系统编码信息
+print(f"UI服务器 - 系统默认编码: {locale.getpreferredencoding()}")
+print(f"UI服务器 - Python默认编码: {sys.getdefaultencoding()}")
 
 class RAGServiceWebUI:
     """知识库管理界面类，提供基于Gradio的Web界面，通过API与后端交互"""
@@ -158,6 +168,7 @@ class RAGServiceWebUI:
                             "文件路径": file.get("file_path", ""),
                             "文件大小": self._format_file_size(file.get("file_size", 0)),
                             "块数量": file.get("chunks_count", 0),
+                            "重要性系数": file.get("importance_coefficient", 0),
                             "添加时间": file.get("add_time", "")
                         })
                     
@@ -279,6 +290,39 @@ class RAGServiceWebUI:
             error_trace = traceback.format_exc()
             print(f"替换文件失败: {str(e)}\n{error_trace}")
             return f"替换文件失败: {str(e)}"
+    
+    def set_importance_coefficient(self, kb_name: str, file_path: str, importance_factor: float) -> str:
+        """设置文件的重要性系数"""
+        if not kb_name or not file_path:
+            return "错误：知识库名称和文件路径不能为空"
+        
+        try:
+            # 提取文件名
+            file_name = os.path.basename(file_path)
+            
+            # 发送请求
+            response = requests.post(
+                f"{self.api_base_url}/kb/set_importance",
+                json={
+                    "kb_name": kb_name,
+                    "file_name": file_name,
+                    "importance_factor": importance_factor
+                }
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result["status"] == "success":
+                    return f"成功设置文件 {file_name} 的重要性系数为 {importance_factor}"
+                else:
+                    return f"设置重要性系数失败: {result.get('message', '未知错误')}"
+            else:
+                error_data = response.json()
+                return f"设置重要性系数失败: {error_data.get('detail', f'HTTP {response.status_code}')}"
+        except Exception as e:
+            error_trace = traceback.format_exc()
+            print(f"设置重要性系数失败: {str(e)}\n{error_trace}")
+            return f"设置重要性系数失败: {str(e)}"
     
     def _format_file_size(self, bytes: int) -> str:
         """格式化文件大小"""
@@ -824,8 +868,8 @@ class RAGServiceWebUI:
                             with gr.Box():
                                 gr.Markdown("### 文件列表")
                                 file_list = gr.Dataframe(
-                                    headers=["序号", "文件名", "文件路径", "文件大小", "块数量", "添加时间"],
-                                    datatype=["number", "str", "str", "str", "number", "str"],
+                                    headers=["序号", "文件名", "文件路径", "文件大小", "块数量", "重要性系数", "添加时间"],
+                                    datatype=["number", "str", "str", "str", "number", "number", "str"],
                                     row_count=10,
                                     interactive=False
                                 )
@@ -867,6 +911,15 @@ class RAGServiceWebUI:
                                     row_count=8,
                                     interactive=False
                                 )
+                            
+                            # 添加重要性系数设置区域
+                            with gr.Box():
+                                gr.Markdown("### 设置重要性系数")
+                                with gr.Row():
+                                    importance_file_path = gr.Textbox(label="选中的文件路径", interactive=False)
+                                    importance_factor = gr.Slider(label="重要性系数", minimum=0.1, maximum=5.0, step=0.1, value=1.0)
+                                set_importance_btn = gr.Button("设置重要性系数", variant="primary")
+                                importance_result = gr.Textbox(label="设置结果", interactive=False)
                 
                 with gr.TabItem("🔎 知识库检索", id="kb_search"):
                     with gr.Row():
@@ -1005,119 +1058,20 @@ class RAGServiceWebUI:
                 outputs=file_list
             )
             
-            # 文件列表选择事件
-            selected_file_path = gr.State("")
-
-            def on_file_select(evt: gr.SelectData, file_data):
-                """处理文件选择事件"""
-                try:
-                    if evt is not None and hasattr(evt, 'index') and file_data is not None:
-                        # 获取选中行的索引
-                        if isinstance(evt.index, tuple):
-                            row_idx = evt.index[0]
-                        elif isinstance(evt.index, list):
-                            row_idx = evt.index[0] if evt.index else 0
-                        else:
-                            row_idx = evt.index
-                        
-                        # 检查数据格式并获取文件路径
-                        if isinstance(file_data, pd.DataFrame):
-                            if row_idx < len(file_data):
-                                try:
-                                    file_path = file_data.iloc[row_idx]["文件路径"]
-                                    print(f"已选择文件路径: {file_path}")
-                                    return file_path
-                                except:
-                                    print(f"无法从DataFrame中获取文件路径，尝试从字典中获取")
-                                    if isinstance(file_data.iloc[row_idx], dict):
-                                        file_path = file_data.iloc[row_idx].get("文件路径", "")
-                                        return file_path
-                        elif isinstance(file_data, list) and len(file_data) > row_idx:
-                            file_path = file_data[row_idx].get("文件路径", "")
-                            print(f"已从列表中选择文件路径: {file_path}")
-                            return file_path
-                        else:
-                            print(f"文件数据格式不支持: {type(file_data)}, row_idx={row_idx}")
-                    else:
-                        print(f"文件选择事件格式不正确: evt={evt}, file_data类型={type(file_data)}")
-                except Exception as e:
-                    print(f"文件选择处理出错: {str(e)}")
-                    import traceback
-                    print(traceback.format_exc())
-                return ""
-
-            def update_file_details(kb_name, file_path):
-                """获取并更新文件详情"""
-                if not kb_name or not file_path:
-                    return pd.DataFrame([{"提示": "请选择知识库和文件"}])
-                return self.get_file_details(kb_name, file_path)
-
-            # 使用新的选择事件处理方式
+            # 绑定文件选择事件到替换文件和设置重要性区域
             file_list.select(
-                fn=on_file_select,
+                fn=self.on_file_select,
                 inputs=[file_list],
-                outputs=selected_file_path
-            ).then(
-                fn=lambda path: path,
-                inputs=selected_file_path,
-                outputs=replace_file_path
-            ).then(
-                fn=update_file_details,
-                inputs=[file_mgr_kb_name, selected_file_path],
-                outputs=file_details
+                outputs=[replace_file_path, file_details, importance_file_path]
             )
             
-            delete_file_btn.click(
-                fn=self.delete_file,
-                inputs=[file_mgr_kb_name, selected_file_path],
-                outputs=delete_file_result
+            # 绑定设置重要性系数按钮
+            set_importance_btn.click(
+                fn=self.set_importance_coefficient,
+                inputs=[file_mgr_kb_name, importance_file_path, importance_factor],
+                outputs=importance_result
             ).then(
-                fn=self.list_files,
-                inputs=file_mgr_kb_name,
-                outputs=file_list
-            )
-            
-            def process_replace_file(kb_name, file_to_replace, file_info):
-                """处理文件替换请求"""
-                try:
-                    print(f"替换文件参数: kb_name={kb_name}, file_to_replace={file_to_replace}, file_info类型={type(file_info)}")
-                    
-                    if file_info is None:
-                        return "错误：请选择替换文件"
-                    if not kb_name or not file_to_replace:
-                        return "错误：请选择知识库和要替换的文件"
-                        
-                    # 获取上传文件的路径
-                    if hasattr(file_info, 'name'):
-                        file_path = file_info.name
-                    elif isinstance(file_info, dict) and 'name' in file_info:
-                        file_path = file_info['name']
-                    else:
-                        return "错误：无法识别上传的文件格式"
-                        
-                    print(f"替换文件路径: {file_path}")
-                    
-                    # 执行替换操作
-                    return self.replace_file(
-                        kb_name, 
-                        file_to_replace, 
-                        file_path, 
-                        replace_chunk_method.value, 
-                        replace_chunk_size.value, 
-                        replace_chunk_overlap.value
-                    )
-                except Exception as e:
-                    print(f"替换文件处理出错: {str(e)}")
-                    import traceback
-                    print(traceback.format_exc())
-                    return f"替换文件处理出错: {str(e)}"
-                
-            replace_file_btn.click(
-                fn=process_replace_file,
-                inputs=[file_mgr_kb_name, replace_file_path, new_file],
-                outputs=replace_result
-            ).then(
-                fn=self.list_files,
+                fn=self.list_files,  # 刷新文件列表以显示更新后的重要性系数
                 inputs=file_mgr_kb_name,
                 outputs=file_list
             )
@@ -1388,6 +1342,37 @@ class RAGServiceWebUI:
             error_msg = f"导入知识库过程中出错: {str(e)}"
             print(f"{error_msg}\n{error_trace}")
             return f"{error_msg}"
+
+    def on_file_select(self, evt: gr.SelectData, file_data):
+        """处理文件选择事件"""
+        try:
+            if evt is not None and hasattr(evt, 'index') and file_data is not None:
+                # 获取选中行的索引
+                if isinstance(evt.index, tuple):
+                    row_idx = evt.index[0]
+                elif isinstance(evt.index, list):
+                    row_idx = evt.index[0] if evt.index else 0
+                else:
+                    row_idx = evt.index
+                
+                # 确认选中的行在有效范围内
+                if isinstance(file_data, pd.DataFrame) and len(file_data) > row_idx:
+                    selected_row = file_data.iloc[row_idx]
+                    
+                    # 判断是否包含错误提示
+                    if "错误" in selected_row or "提示" in selected_row:
+                        return "", {}
+                        
+                    # 提取文件路径和重要性系数
+                    if "文件路径" in selected_row:
+                        file_path = selected_row["文件路径"]
+                        importance_coef = selected_row.get("重要性系数", 1.0)
+                        return file_path, {}, file_path
+                
+                return "", {}
+        except Exception as e:
+            print(f"处理文件选择事件时出错: {str(e)}")
+            return "", {}
 
 # 便捷启动函数
 def launch_ui(api_base_url: str = "http://localhost:8000", share: bool = False, server_name: str = "0.0.0.0", server_port: int = 7861):

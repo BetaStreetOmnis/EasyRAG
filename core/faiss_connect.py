@@ -1480,7 +1480,7 @@ class FaissManager:
     
     def delete_file(self, collection_name: str, file_name: str) -> bool:
         """
-        从集合中删除文件及其所有向量
+        从集合中删除指定文件
         
         Args:
             collection_name: 集合名称
@@ -1489,42 +1489,116 @@ class FaissManager:
         Returns:
             bool: 删除是否成功
         """
-        if not self.collection_exists(collection_name):
-            logger.error(f"集合 {collection_name} 不存在")
-            return False
-            
-        # 确保索引、元数据和文件注册表已加载
-        if collection_name not in self.indexes:
-            self._load_index(collection_name)
-        if collection_name not in self.metadata:
-            self._load_metadata(collection_name)
-        if collection_name not in self.file_registry:
-            self._load_file_registry(collection_name)
-            
-        if file_name not in self.file_registry[collection_name]:
-            logger.warning(f"文件 {file_name} 在集合 {collection_name} 中不存在")
-            return False
-            
         try:
-            # 收集所有版本的向量ID
-            file_info = self.file_registry[collection_name][file_name]
-            all_vector_ids = []
-            for version in file_info['versions']:
-                all_vector_ids.extend(version['vector_ids'])
+            if not self._ensure_collection_exists(collection_name):
+                return False
+                
+            # 加载索引和元数据（如果还没有加载）
+            if collection_name not in self.indexes:
+                self._load_index(collection_name)
+            if collection_name not in self.metadata:
+                self._load_metadata(collection_name)
+            if collection_name not in self.file_registry:
+                self._load_file_registry(collection_name)
+                
+            # 获取文件注册表
+            file_registry = self.file_registry.get(collection_name, {})
             
-            # 删除所有向量
-            if all_vector_ids:
-                self.delete_vectors(collection_name, all_vector_ids)
+            # 检查文件是否存在
+            if file_name not in file_registry:
+                logger.warning(f"文件 {file_name} 不存在于集合 {collection_name} 中")
+                return False
+                
+            # 获取文件信息，以便记录删除事件
+            file_info = file_registry[file_name]
             
-            # 从文件注册表中删除文件信息
-            del self.file_registry[collection_name][file_name]
+            # 删除与该文件关联的向量
+            vector_ids = file_info.get("vector_ids", [])
+            if vector_ids:
+                logger.info(f"从集合 {collection_name} 中删除与文件 {file_name} 关联的 {len(vector_ids)} 个向量")
+                self.delete_vectors(collection_name, vector_ids)
+            
+            # 从文件注册表中删除文件
+            del file_registry[file_name]
+            
+            # 保存更新后的文件注册表
             self._save_file_registry(collection_name)
             
-            logger.info(f"成功从集合 {collection_name} 中删除文件 {file_name}")
-            return True
+            # 记录文件删除事件
+            event_data = {
+                "file_name": file_name,
+                "timestamp": datetime.now().isoformat(),
+                "action": "delete",
+                "vector_count": len(vector_ids) if vector_ids else 0
+            }
+            self._record_file_event(collection_name, file_name, "delete", event_data)
             
+            # 更新集合统计信息
+            self._update_collection_stats(collection_name)
+            
+            logger.info(f"文件 {file_name} 已从集合 {collection_name} 中删除")
+            return True
         except Exception as e:
-            logger.error(f"从集合 {collection_name} 中删除文件 {file_name} 失败: {str(e)}")
+            logger.error(f"删除文件 {file_name} 时出错: {str(e)}")
+            logger.exception(e)
+            return False
+    
+    def update_file_metadata(self, collection_name: str, file_name: str, metadata_update: Dict[str, Any]) -> bool:
+        """
+        更新文件的元数据信息，包括重要性系数等
+        
+        Args:
+            collection_name: 集合名称
+            file_name: 文件名
+            metadata_update: 要更新的元数据字典
+            
+        Returns:
+            bool: 更新是否成功
+        """
+        try:
+            if not self._ensure_collection_exists(collection_name):
+                return False
+                
+            # 加载文件注册表（如果还没有加载）
+            if collection_name not in self.file_registry:
+                self._load_file_registry(collection_name)
+                
+            # 获取文件注册表
+            file_registry = self.file_registry.get(collection_name, {})
+            
+            # 检查文件是否存在
+            if file_name not in file_registry:
+                logger.warning(f"文件 {file_name} 不存在于集合 {collection_name} 中")
+                return False
+            
+            # 更新文件元数据
+            updated = False
+            for key, value in metadata_update.items():
+                if key not in file_registry[file_name] or file_registry[file_name][key] != value:
+                    file_registry[file_name][key] = value
+                    updated = True
+            
+            if not updated:
+                logger.info(f"文件 {file_name} 的元数据无变化，不需要更新")
+                return True
+                
+            # 保存更新后的文件注册表
+            self._save_file_registry(collection_name)
+            
+            # 记录元数据更新事件
+            event_data = {
+                "file_name": file_name,
+                "timestamp": datetime.now().isoformat(),
+                "action": "update_metadata",
+                "metadata_changes": metadata_update
+            }
+            self._record_file_event(collection_name, file_name, "update_metadata", event_data)
+            
+            logger.info(f"文件 {file_name} 的元数据已更新")
+            return True
+        except Exception as e:
+            logger.error(f"更新文件 {file_name} 的元数据时出错: {str(e)}")
+            logger.exception(e)
             return False
     
     def restore_file_version(self, collection_name: str, file_name: str, version: int) -> bool:
