@@ -44,6 +44,7 @@ jsonschema-specifications==2023.12.1
 kiwisolver==1.4.7
 lazy_loader==0.4
 linkify-it-py==2.0.3
+faiss-cpu==1.7.4
 lxml==5.3.1
 markdown-it-py==2.2.0
 MarkupSafe==2.1.5

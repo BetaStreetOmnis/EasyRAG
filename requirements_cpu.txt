@@ -1,3 +1,4 @@
+faiss-cpu==1.7.4
 numpy==1.24.4
 addict==2.4.0
 aiofiles==23.2.1
