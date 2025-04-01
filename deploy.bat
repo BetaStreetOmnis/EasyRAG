@@ -179,10 +179,6 @@ echo Directories created!
 
 echo.
 
-:: Download and prepare DeepSeek model
-echo [5/6] Preparing DeepSeek model...
-echo The system will automatically download DeepSeek 1.5B model from ModelScope
-echo Model size is approximately 3GB, please ensure sufficient disk space
 
 echo.
 

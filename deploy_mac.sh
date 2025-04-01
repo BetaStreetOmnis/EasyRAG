@@ -138,15 +138,8 @@ mkdir -p models_file
 mkdir -p temp_files
 echo -e "${GREEN}Directories created!${NC}"
 
-echo ""
 
-# Download and prepare DeepSeek model
-echo -e "${GREEN}[6/7] Preparing DeepSeek model...${NC}"
-echo "The system will automatically download DeepSeek 1.5B model from ModelScope"
-echo "Model size is approximately 3GB, please ensure sufficient disk space"
-
-echo ""
-
+#
 # Start services
 echo -e "${GREEN}[7/7] Starting services...${NC}"
 echo ""

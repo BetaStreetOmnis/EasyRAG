@@ -1427,7 +1427,7 @@ async def replace_file(
     """替换知识库中的文件"""
     try:
         # 检查必要的组件是否初始化
-        document_processor = DocumentProcessor()
+            document_processor = DocumentProcessor()
         task_id = str(uuid.uuid4())
         processing_tasks[task_id] = {
             "status": "processing", 
@@ -1447,72 +1447,72 @@ async def replace_file(
         chunk_overlap = config.get("chunk_overlap", 200)
         
         # 处理上传的新文件
-        temp_file_path = None
-        try:
-            # 更新处理进度
-            processing_tasks[task_id] = {
-                "status": "processing", 
+            temp_file_path = None
+            try:
+                # 更新处理进度
+                processing_tasks[task_id] = {
+                    "status": "processing", 
                 "progress": 10, 
                 "message": f"处理替换文件: {orig_filename}"
             }
             
             # 安全处理文件名，避免特殊字符问题
-            safe_filename = quote(orig_filename)
-            temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp_files")
-            os.makedirs(temp_dir, exist_ok=True)
-            
-            # 使用uuid生成唯一临时文件名，避免冲突
-            temp_file_path = os.path.join(temp_dir, f"{uuid.uuid4()}_{safe_filename}")
-            
-            # 打印文件信息
-            print(f"原始文件名: {file.filename}")
-            print(f"提取的文件名: {orig_filename}")
-            print(f"安全处理后文件名: {safe_filename}")
-            print(f"临时文件路径: {temp_file_path}")
-            
+                safe_filename = quote(orig_filename)
+                temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp_files")
+                os.makedirs(temp_dir, exist_ok=True)
+                
+                # 使用uuid生成唯一临时文件名，避免冲突
+                temp_file_path = os.path.join(temp_dir, f"{uuid.uuid4()}_{safe_filename}")
+                
+                # 打印文件信息
+                print(f"原始文件名: {file.filename}")
+                print(f"提取的文件名: {orig_filename}")
+                print(f"安全处理后文件名: {safe_filename}")
+                print(f"临时文件路径: {temp_file_path}")
+                
             # 读取整个文件内容
-            file_content = await file.read()
+                file_content = await file.read()
             
-            # 检查文件是否为空
-            if not file_content or len(file_content) == 0:
+                # 检查文件是否为空
+                if not file_content or len(file_content) == 0:
                 raise HTTPException(status_code=400, detail=f"替换文件 {orig_filename} 为空")
-            
-            print(f"文件 '{orig_filename}' 大小: {len(file_content)} 字节")
-            
+                
+                print(f"文件 '{orig_filename}' 大小: {len(file_content)} 字节")
+                
             # 将文件内容写入临时文件
-            with open(temp_file_path, "wb") as temp_file:
-                temp_file.write(file_content)
-            
-            # 确认文件写入成功
+                with open(temp_file_path, "wb") as temp_file:
+                    temp_file.write(file_content)
+                
+                # 确认文件写入成功
             if not os.path.exists(temp_file_path) or os.path.getsize(temp_file_path) == 0:
                 raise HTTPException(status_code=500, detail="临时文件创建失败")
-            
-            # 定义进度回调函数
-            def update_progress(progress, message):
+                
+                # 定义进度回调函数
+                def update_progress(progress, message):
                 file_progress = 10 + int(progress * 0.8)  # 10-90%
-                processing_tasks[task_id] = {
-                    "status": "processing", 
+                    processing_tasks[task_id] = {
+                        "status": "processing", 
                     "progress": file_progress, 
-                    "message": message
-                }
-            
-            # 使用DocumentProcessor处理文件
+                        "message": message
+                    }
+                
+                # 使用DocumentProcessor处理文件
             documents = document_processor.process_document(
-                file_path=temp_file_path,
-                chunk_method=chunk_method,
-                chunk_size=chunk_size,
-                chunk_overlap=chunk_overlap,
-                progress_callback=update_progress
-            )
+                        file_path=temp_file_path,
+                        chunk_method=chunk_method,
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
+                        progress_callback=update_progress
+                    )
             
             # 替换知识库中的文件
             processing_tasks[task_id]["message"] = f"正在替换知识库中的文件..."
             success = rag_service.replace_file(kb_name, file_to_replace, documents)
-            
-            # 更新处理完成状态
-            processing_tasks[task_id] = {
-                "status": "completed", 
-                "progress": 100, 
+        
+        # 更新处理完成状态
+        processing_tasks[task_id] = {
+            "status": "completed", 
+            "progress": 100, 
                 "message": "文件替换完成"
             }
             
@@ -1522,22 +1522,22 @@ async def replace_file(
                 print(f"临时文件已删除: {temp_file_path}")
             
             if success:
-                return {
+            return {
                     "status": "success",
                     "message": f"成功替换知识库 {kb_name} 中的文件 {file_to_replace}",
-                    "task_id": task_id
-                }
-            else:
-                return {
+                "task_id": task_id
+            }
+        else:
+            return {
                     "status": "error",
                     "message": f"替换知识库 {kb_name} 中的文件 {file_to_replace} 失败",
-                    "task_id": task_id
-                }
+                "task_id": task_id
+            }
                 
-        except Exception as e:
+    except Exception as e:
             error_msg = f"替换文件时出错: {str(e)}"
             print(f"{error_msg}\n{traceback.format_exc()}")
-            
+        
             # 更新处理失败状态
             processing_tasks[task_id] = {
                 "status": "failed", 
@@ -1612,9 +1612,9 @@ async def load_documents(
                     "progress": 100, 
                     "message": f"成功加载 {len(documents)} 个文档到知识库 {kb_name}"
                 }
-                
-                return {
-                    "status": "success",
+            
+        return {
+            "status": "success",
                     "message": f"成功加载 {len(documents)} 个文档到知识库 {kb_name}",
                     "task_id": task_id
                 }
@@ -1625,7 +1625,7 @@ async def load_documents(
                     "message": "加载文档失败"
                 }
                 
-                return {
+        return {
                     "status": "error",
                     "message": "加载文档失败",
                     "task_id": task_id
@@ -1661,18 +1661,18 @@ async def repair_knowledge_bases():
             raise HTTPException(status_code=500, detail="RAG服务未正确初始化")
             
         if not hasattr(rag_service.faiss_manager, 'repair_collection_files'):
-            return {
+        return {
                 "status": "failed",
                 "message": "当前版本不支持修复功能，请更新代码"
             }
         
         repair_results = rag_service.faiss_manager.repair_collection_files()
         
-        return {
-            "status": "success",
+            return {
+                "status": "success",
             "message": "知识库文件修复完成",
             "data": repair_results
-        }
+            }
     except Exception as e:
         error_trace = traceback.format_exc()
         raise HTTPException(status_code=500, detail=f"修复知识库文件失败: {str(e)}\n{error_trace}")
@@ -1720,8 +1720,8 @@ async def diagnose_knowledge_base(kb_name: str):
         files_info = rag_service.vector_db.list_files(kb_name)
         
         # 返回诊断结果
-        return {
-            "status": "success",
+                return {
+                    "status": "success",
             "data": {
                 "kb_name": kb_name,
                 "index_size": index_size,
@@ -1796,10 +1796,10 @@ async def rebuild_knowledge_base(kb_name: str):
         dimension = info.get("dimension", 512)
         rag_service.vector_db.create_collection(kb_name, dimension=dimension, index_type="Flat")
         
-        return {
-            "status": "success",
+            return {
+                "status": "success",
             "message": f"成功重建知识库 {kb_name}，原始文件已备份"
-        }
+            }
     except Exception as e:
         error_trace = traceback.format_exc()
         raise HTTPException(status_code=500, detail=f"重建知识库失败: {str(e)}\n{error_trace}")
@@ -1810,7 +1810,7 @@ async def search_knowledge_base_debug(query: SearchQuery):
     try:
         if not rag_service:
             raise HTTPException(status_code=500, detail="RAG服务未正确初始化")
-        
+            
         # 获取原始搜索结果
         results = rag_service.search(
             query.kb_name,
@@ -1846,7 +1846,7 @@ async def search_knowledge_base_debug(query: SearchQuery):
                     debug_info["index_size"] = rag_service.vector_db.indexes[query.kb_name].ntotal
                 else:
                     debug_info["index_size"] = "未知"
-        except Exception as e:
+    except Exception as e:
             debug_info["kb_info_error"] = str(e)
         
         # 获取查询向量
@@ -1873,8 +1873,8 @@ async def search_knowledge_base_debug(query: SearchQuery):
             detailed_results.append(detailed_result)
         
         if not results:
-            return {
-                "status": "success",
+        return {
+            "status": "success",
                 "message": "未找到相关内容",
                 "debug_info": debug_info,
                 "data": []
@@ -1894,8 +1894,8 @@ async def chat_with_knowledge_base(query: ChatQuery):
     """与知识库对话"""
     try:
         # 检查必要的组件是否初始化
-        rag_service = RAGService()
-        
+            rag_service = RAGService()
+            
         # 检查知识库是否存在
         if not rag_service.kb_exists(query.kb_name):
             return {"status": "error", "message": f"知识库 {query.kb_name} 不存在"}
@@ -1933,8 +1933,8 @@ async def set_file_importance(request: ImportanceUpdate):
     """设置文件的重要性系数"""
     try:
         # 检查必要的组件是否初始化
-        rag_service = RAGService()
-        
+            rag_service = RAGService()
+            
         # 检查知识库是否存在
         if not rag_service.kb_exists(request.kb_name):
             return {"status": "error", "message": f"知识库 {request.kb_name} 不存在"}
@@ -1942,7 +1942,7 @@ async def set_file_importance(request: ImportanceUpdate):
         # 检查参数有效性
         if request.importance_factor < 0.1 or request.importance_factor > 5.0:
             return {"status": "error", "message": "重要性系数必须在0.1到5.0之间"}
-        
+
         # 检查文件是否存在
         files = rag_service.list_files(request.kb_name)
         file_exists = False
@@ -1960,12 +1960,12 @@ async def set_file_importance(request: ImportanceUpdate):
             file_name=request.file_name,
             importance_factor=request.importance_factor
         )
-        
-        if success:
+            
+            if success:
             return {"status": "success", "message": f"成功设置文件 {request.file_name} 的重要性系数为 {request.importance_factor}"}
-        else:
+            else:
             return {"status": "error", "message": "更新重要性系数失败"}
-    except Exception as e:
+        except Exception as e:
         error_msg = f"设置文件重要性系数失败: {str(e)}"
         error_trace = traceback.format_exc()
         print(f"{error_msg}\n{error_trace}")

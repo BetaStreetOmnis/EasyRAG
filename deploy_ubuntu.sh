@@ -159,53 +159,12 @@ echo %GREEN%Directories created!%NC%
 echo.
 
 rem [6/7] Download required models
-echo %GREEN%[6/7] Downloading and preparing required models...%NC%
-echo This process will download all required models to the models_file directory.
-echo Total download size is approximately 7GB, please ensure sufficient disk space and stable network connection.
-echo.
+echo -e "${GREEN}[6/7] Downloading and preparing required models...${NC}"
+echo "This process will download all required models to the models_file directory."
+echo "Total download size is approximately 7GB, please ensure sufficient disk space and stable network connection."
+echo ""
 
-rem Configure modelscope cache
-echo Configuring modelscope cache directory...
-set MODELSCOPE_CACHE=%cd%\models_file
 
-rem Download the DeepSeek LLM model
-echo %YELLOW%[Model 1/4] Downloading DeepSeek 1.5B model...%NC%
-python -c "from modelscope import snapshot_download; import os, traceback; try: print('Downloading DeepSeek model...'); model_id = 'deepseek-ai/deepseek-chat-1.5b-base'; model_dir = snapshot_download(model_id, cache_dir='%cd%/models_file'); print(f'DeepSeek model downloaded to {model_dir}'); except Exception as e: print(f'Error downloading DeepSeek model: {str(e)}'); traceback.print_exc();"
-if %ERRORLEVEL% NEQ 0 (
-    echo %RED%Failed to download DeepSeek model. The system will attempt to download it at runtime.%NC%
-) else (
-    echo %GREEN%DeepSeek model downloaded successfully!%NC%
-)
-
-rem Download the Embedding model
-echo %YELLOW%[Model 2/4] Downloading Embedding model...%NC%
-python -c "from modelscope import snapshot_download; import os, traceback; try: print('Downloading Embedding model...'); model_id = 'iic/nlp_gte_sentence-embedding_chinese-base'; model_dir = snapshot_download(model_id, cache_dir='%cd%/models_file'); print(f'Embedding model downloaded to {model_dir}'); except Exception as e: print(f'Error downloading Embedding model: {str(e)}'); traceback.print_exc();"
-if %ERRORLEVEL% NEQ 0 (
-    echo %RED%Failed to download Embedding model. The system will attempt to download it at runtime.%NC%
-) else (
-    echo %GREEN%Embedding model downloaded successfully!%NC%
-)
-
-rem Download the Rerank model
-echo %YELLOW%[Model 3/4] Downloading Rerank model...%NC%
-python -c "from modelscope import snapshot_download; import os, traceback; try: print('Downloading Rerank model...'); model_id = 'iic/gte_passage-ranking_multilingual-base'; model_dir = snapshot_download(model_id, cache_dir='%cd%/models_file'); print(f'Rerank model downloaded to {model_dir}'); except Exception as e: print(f'Error downloading Rerank model: {str(e)}'); traceback.print_exc();"
-if %ERRORLEVEL% NEQ 0 (
-    echo %RED%Failed to download Rerank model. The system will attempt to download it at runtime.%NC%
-) else (
-    echo %GREEN%Rerank model downloaded successfully!%NC%
-)
-
-rem Download the OCR model
-echo %YELLOW%[Model 4/4] Downloading OCR model...%NC%
-python -c "from modelscope import snapshot_download; import os, sys, traceback; try: ocr_model_dir = os.path.join('%cd%/models_file', 'easyocr'); os.makedirs(ocr_model_dir, exist_ok=True); print(f'OCR model directory: {ocr_model_dir}'); print('Downloading OCR model...'); model_id = 'Ceceliachenen/easyocr'; model_dir = snapshot_download(model_id, cache_dir=ocr_model_dir); print(f'OCR model downloaded to {model_dir}'); try: import easyocr; print('EasyOCR already installed'); except ImportError: print('Installing EasyOCR...'); import pip; pip.main(['install', 'easyocr']); print('EasyOCR installed'); print('Initializing EasyOCR to download language models...'); sys.path.append('%cd%'); os.environ['MODELSCOPE_CACHE'] = '%cd%/models_file'; import easyocr; reader = easyocr.Reader(['ch_sim', 'en'], model_storage_directory=ocr_model_dir, download_enabled=True); print('OCR language models downloaded and initialized'); except Exception as e: print(f'Error downloading or initializing OCR model: {str(e)}'); traceback.print_exc();"
-if %ERRORLEVEL% NEQ 0 (
-    echo %RED%Failed to download OCR model. The system will attempt to download it at runtime.%NC%
-) else (
-    echo %GREEN%OCR model downloaded successfully!%NC%
-)
-
-echo %GREEN%All models download process completed. Some models may be downloaded at runtime if failed.%NC%
-echo.
 
 rem [7/7] Start services
 echo %GREEN%[7/7] Starting services...%NC%
