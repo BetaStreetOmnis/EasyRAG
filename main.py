@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Tuple, Optional
 # 导入自定义模块
 from core.faiss_connect import FaissManager, DataLineageTracker
 from core.embbeding_model import get_embedding
-from core.rerank_model import reranker
+from core.rerank_model import reranker, load_rerank_model
 from core.chunker.chunker_main import DocumentChunker, ChunkMethod
 from core.file_read.file_handle import FileHandler
 
@@ -229,6 +229,19 @@ class RAGService:
         self.vector_db = FaissManager(os.path.join(db_path, "faiss_indexes"))
         self.lineage_tracker = DataLineageTracker()
         self.doc_processor = DocumentProcessor()
+
+    def kb_exists(self, kb_name: str) -> bool:
+        """
+        检查知识库是否存在
+        
+        Args:
+            kb_name: 知识库名称
+            
+        Returns:
+            bool: 知识库是否存在
+        """
+        return self.vector_db.collection_exists(kb_name)
+        
         
     def create_knowledge_base(self, kb_name: str, dimension: int = 512, index_type: str = "Flat") -> bool:
         """
@@ -444,8 +457,8 @@ class RAGService:
         """
         logger.info(f"搜索知识库 {kb_name}, 查询: {query}, top_k: {top_k}, 使用重排序: {use_rerank}")
         
-        if not self.vector_db or not self.embedding_model:
-            raise Exception("向量数据库或嵌入模型未初始化")
+        # if not self.vector_db or not self.embedding_model:
+        #     raise Exception("向量数据库或嵌入模型未初始化")
             
         if not self.vector_db.kb_exists(kb_name):
             logger.warning(f"知识库 {kb_name} 不存在")
@@ -453,7 +466,7 @@ class RAGService:
             
         # 将查询转换为向量
         try:
-            query_vector = self.embedding_model.get_embedding(query)
+            query_vector = get_embedding(query)
         except Exception as e:
             logger.error(f"查询向量化失败: {str(e)}")
             logger.exception(e)
@@ -461,71 +474,87 @@ class RAGService:
             
         # 向量搜索，获取更多结果用于重排序
         search_top_k = top_k * 3 if use_rerank else top_k
-        vectors, metadata_list = self.vector_db.search(kb_name, query_vector, search_top_k, filter_criteria)
+
+        # 调用vector_db的search方法，获取索引、相似度和元数据
+        indices, similarities, metadata_list = self.vector_db.search(kb_name, query_vector, search_top_k)
         
-        if not vectors or not metadata_list:
+        if not indices or not similarities or not metadata_list:
             logger.info(f"未找到匹配结果")
             return []
             
-        # 应用重要性系数调整相关度分数
-        for i, metadata in enumerate(metadata_list):
+        # 将原始搜索结果组织成统一格式
+        search_results = []
+        for idx, sim, meta in zip(indices, similarities, metadata_list):
             # 提取重要性系数，默认为1.0
-            importance_coef = metadata.get("metadata", {}).get("importance_coefficient", 1.0)
+            importance_coef = meta.get("metadata", {}).get("importance_coefficient", 1.0)
             
             # 确保系数在有效范围内
             if not isinstance(importance_coef, (int, float)) or importance_coef <= 0:
                 importance_coef = 1.0
                 
             # 调整分数
-            metadata_list[i]["score"] = metadata_list[i]["score"] * float(importance_coef)
+            adjusted_score = sim * float(importance_coef)
+            
+            result_item = {
+                "index": idx,
+                "score": adjusted_score,
+                "text": meta.get("text", ""),
+                "metadata": meta.get("metadata", {})
+            }
+            search_results.append(result_item)
             
         # 如果使用重排序，则应用重排序模型
-        if use_rerank and len(metadata_list) > 0:
+        if use_rerank and len(search_results) > 0:
             try:
-                documents = [meta.get("text", "") for meta in metadata_list]
+                documents = [item["text"] for item in search_results]
                 logger.info(f"向量搜索返回了 {len(documents)} 条结果")
                 
                 # 使用重排序模型
-                if rerank_model_loaded():
+                if load_rerank_model():
                     logger.info(f"使用重排序模型对 {len(documents)} 条结果进行重排序")
                     # 获取重排序结果
                     ranked_results = reranker(query, documents)
                     
                     # 重新组织结果
-                    reranked_metadata = []
+                    reranked_results = []
                     for doc, score in ranked_results:
                         # 找到原始文档的索引
                         original_index = documents.index(doc)
-                        orig_metadata = metadata_list[original_index]
+                        orig_result = search_results[original_index]
                         
                         # 提取重要性系数
-                        importance_coef = orig_metadata.get("metadata", {}).get("importance_coefficient", 1.0)
+                        importance_coef = orig_result["metadata"].get("importance_coefficient", 1.0)
                         if not isinstance(importance_coef, (int, float)) or importance_coef <= 0:
                             importance_coef = 1.0
                             
                         # 应用重要性系数到重排序分数
                         adjusted_score = score * float(importance_coef)
                         
-                        # 创建新的元数据项
-                        metadata_item = orig_metadata.copy()
-                        metadata_item["score"] = adjusted_score
-                        reranked_metadata.append(metadata_item)
+                        # 创建新的结果项
+                        result_item = orig_result.copy()
+                        result_item["score"] = adjusted_score
+                        reranked_results.append(result_item)
                     
                     # 按分数降序排序
-                    reranked_metadata.sort(key=lambda x: x["score"], reverse=True)
+                    reranked_results.sort(key=lambda x: x["score"], reverse=True)
                     
                     # 只保留top_k个结果
-                    metadata_list = reranked_metadata[:top_k]
+                    search_results = reranked_results[:top_k]
                 else:
                     logger.warning("重排序模型未加载，使用原始向量搜索结果")
-                    metadata_list = metadata_list[:top_k]
+                    # 按分数降序排序
+                    search_results.sort(key=lambda x: x["score"], reverse=True)
+                    search_results = search_results[:top_k]
             except Exception as e:
                 logger.error(f"重排序失败: {str(e)}")
                 logger.exception(e)
-                metadata_list = metadata_list[:top_k]
+                # 按分数降序排序
+                search_results.sort(key=lambda x: x["score"], reverse=True)
+                search_results = search_results[:top_k]
         else:
-            # 不使用重排序，直接截取top_k个结果
-            metadata_list = metadata_list[:top_k]
+            # 不使用重排序，直接按分数排序并截取top_k个结果
+            search_results.sort(key=lambda x: x["score"], reverse=True)
+            search_results = search_results[:top_k]
             
         # 如果需要去重，则移除内容相似的结果
         if remove_duplicates:
@@ -533,8 +562,8 @@ class RAGService:
                 unique_results = []
                 unique_contents = set()
                 
-                for item in metadata_list:
-                    content = item.get("text", "").strip()
+                for item in search_results:
+                    content = item["text"].strip()
                     # 创建一个简单的签名用于去重 (前100个字符)
                     content_signature = content[:100]
                     
@@ -542,18 +571,18 @@ class RAGService:
                         unique_contents.add(content_signature)
                         unique_results.append(item)
                         
-                metadata_list = unique_results
+                search_results = unique_results
             except Exception as e:
                 logger.error(f"去除重复内容失败: {str(e)}")
                 logger.exception(e)
                 
         # 格式化最终结果
         formatted_results = []
-        for item in metadata_list:
+        for item in search_results:
             result = {
-                "content": item.get("text", ""),
-                "score": round(item.get("score", 0), 3),
-                "metadata": item.get("metadata", {})
+                "content": item["text"],
+                "score": round(item["score"], 3),
+                "metadata": item["metadata"]
             }
             formatted_results.append(result)
             

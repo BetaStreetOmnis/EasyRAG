@@ -32,14 +32,12 @@ class FaissManager:
             os.makedirs(index_folder, exist_ok=True)
             
             # 存储映射: 集合名称 -> 索引/元数据
-            self.indexes = {}
-            self.metadata = {}
-            self.file_registry = {}
-            self.file_change_history = {}
+            self.indexes = {}  # 存储加载的FAISS索引
+            self.metadata = {}  # 存储向量对应的元数据
+            self.file_registry = {}  # 存储文件信息
+            self.file_change_history = {}  # 存储文件变更历史
             
             # 检查版本和依赖
-            import faiss
-            import numpy as np
             logger.info(f"初始化FAISS管理器，FAISS版本: {faiss.__version__}")
             logger.info(f"索引存储路径: {os.path.abspath(index_folder)}")
             
@@ -85,6 +83,27 @@ class FaissManager:
         # 对集合名称进行URL编码，避免中文路径问题
         safe_name = urllib.parse.quote(collection_name, safe='')
         return os.path.join(self.index_folder, f"{safe_name}.meta")
+        
+    def kb_exists(self, kb_name: str) -> bool:
+        """
+        检查知识库是否存在
+        
+        Args:
+            kb_name: 知识库名称
+            
+        Returns:
+            bool: 知识库是否存在
+        """
+        try:
+            # 检查索引文件和元数据文件是否存在
+            index_path = self._get_index_path(kb_name)
+            metadata_path = self._get_metadata_path(kb_name)
+            
+            # 如果两个文件都存在，则认为知识库存在
+            return os.path.exists(index_path) and os.path.exists(metadata_path)
+        except Exception as e:
+            logger.error(f"检查知识库 {kb_name} 是否存在时出错: {str(e)}")
+            return False
     
     def _get_file_registry_path(self, collection_name: str) -> str:
         """
@@ -285,7 +304,6 @@ class FaissManager:
                 return False
         except Exception as e:
             logger.error(f"保存索引 {collection_name} 失败: {str(e)}")
-            import traceback
             logger.error(traceback.format_exc())
             return False
     
@@ -317,7 +335,6 @@ class FaissManager:
                 return False
         except Exception as e:
             logger.error(f"保存元数据 {collection_name} 失败: {str(e)}")
-            import traceback
             logger.error(traceback.format_exc())
             return False
     
@@ -400,7 +417,6 @@ class FaissManager:
                 return False
         except Exception as e:
             logger.error(f"保存文件注册表 {collection_name} 失败: {str(e)}")
-            import traceback
             logger.error(traceback.format_exc())
             return False
     
@@ -494,7 +510,6 @@ class FaissManager:
                 return False
         except Exception as e:
             logger.error(f"加载索引 {collection_name} 失败: {str(e)}")
-            import traceback
             logger.error(traceback.format_exc())
             return False
     
@@ -756,6 +771,7 @@ class FaissManager:
             # 获取已加载的对象
             index = self.indexes[collection_name]
             collection_metadata = self.metadata[collection_name]
+            print("collection_metadata", collection_metadata)
             
             # 检查元数据条目数量是否与向量数量匹配
             if len(metadata) != len(vectors):
@@ -806,7 +822,8 @@ class FaissManager:
                         if file_name not in self.file_registry[collection_name]:
                             # 创建完整的文件记录结构
                             self.file_registry[collection_name][file_name] = {
-                                "file_path": file_path,
+                                "file_name": file_name,  # 明确存储文件名
+                                "file_path": file_path,  # 存储完整路径
                                 "added_at": datetime.now().isoformat(),
                                 "vector_count": added_count,
                                 "last_updated": datetime.now().isoformat(),
@@ -820,11 +837,33 @@ class FaissManager:
                                 ],
                                 "current_version": 1
                             }
+                            
+                            # 更新元数据信息，确保每个向量都有文件信息
+                            for i, meta in enumerate(metadata):
+                                vector_idx = before_count + i
+                                if isinstance(collection_metadata, dict):
+                                    if str(vector_idx) in collection_metadata:
+                                        if "metadata" not in collection_metadata[str(vector_idx)]:
+                                            collection_metadata[str(vector_idx)]["metadata"] = {}
+                                        collection_metadata[str(vector_idx)]["metadata"]["file_name"] = file_name
+                                        collection_metadata[str(vector_idx)]["metadata"]["file_path"] = file_path
+                                elif isinstance(collection_metadata, list) and vector_idx < len(collection_metadata):
+                                    if "metadata" not in collection_metadata[vector_idx]:
+                                        collection_metadata[vector_idx]["metadata"] = {}
+                                    collection_metadata[vector_idx]["metadata"]["file_name"] = file_name
+                                    collection_metadata[vector_idx]["metadata"]["file_path"] = file_path
+                            
                             logger.info(f"文件注册表: 添加新文件 {file_name} 记录，包含 {added_count} 个向量")
                         else:
                             # 更新现有文件记录
                             current_file = self.file_registry[collection_name][file_name]
                             
+                            # 确保文件名和路径字段存在
+                            if "file_name" not in current_file:
+                                current_file["file_name"] = file_name
+                            if "file_path" not in current_file:
+                                current_file["file_path"] = file_path
+                                
                             # 确保vector_count字段存在
                             if "vector_count" not in current_file:
                                 current_file["vector_count"] = 0
@@ -874,7 +913,6 @@ class FaissManager:
                     return {"status": "success", "message": f"添加了 {added_count} 个向量到集合 {collection_name}", "count": added_count}
                 except Exception as e:
                     logger.error(f"向空索引添加向量时发生错误: {str(e)}")
-                    import traceback
                     logger.error(traceback.format_exc())
                     return {"status": "error", "message": f"添加向量时发生错误: {str(e)}"}
             
@@ -944,7 +982,8 @@ class FaissManager:
                         if file_name not in self.file_registry[collection_name]:
                             # 创建完整的文件记录结构
                             self.file_registry[collection_name][file_name] = {
-                                "file_path": file_path,
+                                "file_name": file_name,  # 明确存储文件名
+                                "file_path": file_path,  # 存储完整路径
                                 "added_at": datetime.now().isoformat(),
                                 "vector_count": added_count,
                                 "last_updated": datetime.now().isoformat(),
@@ -958,11 +997,33 @@ class FaissManager:
                                 ],
                                 "current_version": 1
                             }
+                            
+                            # 更新元数据信息，确保每个向量都有文件信息
+                            for i, meta in enumerate(metadata):
+                                vector_idx = before_count + i
+                                if isinstance(collection_metadata, dict):
+                                    if str(vector_idx) in collection_metadata:
+                                        if "metadata" not in collection_metadata[str(vector_idx)]:
+                                            collection_metadata[str(vector_idx)]["metadata"] = {}
+                                        collection_metadata[str(vector_idx)]["metadata"]["file_name"] = file_name
+                                        collection_metadata[str(vector_idx)]["metadata"]["file_path"] = file_path
+                                elif isinstance(collection_metadata, list) and vector_idx < len(collection_metadata):
+                                    if "metadata" not in collection_metadata[vector_idx]:
+                                        collection_metadata[vector_idx]["metadata"] = {}
+                                    collection_metadata[vector_idx]["metadata"]["file_name"] = file_name
+                                    collection_metadata[vector_idx]["metadata"]["file_path"] = file_path
+                            
                             logger.info(f"文件注册表: 添加新文件 {file_name} 记录，包含 {added_count} 个向量")
                         else:
                             # 更新现有文件记录
                             current_file = self.file_registry[collection_name][file_name]
                             
+                            # 确保文件名和路径字段存在
+                            if "file_name" not in current_file:
+                                current_file["file_name"] = file_name
+                            if "file_path" not in current_file:
+                                current_file["file_path"] = file_path
+                                
                             # 确保vector_count字段存在
                             if "vector_count" not in current_file:
                                 current_file["vector_count"] = 0
@@ -1017,7 +1078,6 @@ class FaissManager:
                     }
                 except Exception as e:
                     logger.error(f"添加向量时发生错误: {str(e)}")
-                    import traceback
                     logger.error(traceback.format_exc())
                     return {"status": "error", "message": f"添加向量时发生错误: {str(e)}"}
             else:
@@ -1031,7 +1091,6 @@ class FaissManager:
         
         except Exception as e:
             logger.error(f"添加向量到集合 {collection_name} 时发生错误: {str(e)}")
-            import traceback
             logger.error(traceback.format_exc())
             return {"status": "error", "message": f"添加向量失败: {str(e)}"}
     
@@ -1060,19 +1119,16 @@ class FaissManager:
             logger.error(f"搜索失败: 无法加载元数据 {collection_name}")
             return [], [], []
         
-        # 检查并尝试修复一致性问题
         consistency_check = self.check_and_fix_collection_consistency(collection_name)
         if not consistency_check:
             logger.warning(f"集合 {collection_name} 可能存在一致性问题，搜索结果可能不完整")
         
         try:
-            # 添加更多诊断信息
             logger.info(f"搜索集合：{collection_name}，当前索引总数：{self.indexes[collection_name].ntotal}，请求top_k：{top_k}")
             
             if self.indexes[collection_name].ntotal == 0:
                 logger.warning(f"集合 {collection_name} 是空的，没有可搜索的向量")
                 
-                # 添加额外诊断：检查文件注册表
                 if collection_name in self.file_registry and self.file_registry[collection_name]:
                     registry_items = sum(1 for k in self.file_registry[collection_name] if not k.startswith('_'))
                     logger.warning(f"文件注册表存在并包含 {registry_items} 个文件，但索引为空")
@@ -1080,7 +1136,6 @@ class FaissManager:
                         if not fname.startswith('_'):  # 跳过内部字段
                             logger.warning(f"文件 {fname} 信息: {finfo}")
                 
-                # 检查元数据
                 if collection_name in self.metadata and self.metadata[collection_name]:
                     if isinstance(self.metadata[collection_name], dict):
                         logger.warning(f"元数据存在并包含 {len(self.metadata[collection_name])} 个条目，但索引为空")
@@ -1168,6 +1223,37 @@ class FaissManager:
             logger.error(f"搜索集合 {collection_name} 时出错: {str(e)}")
             logger.exception(e)
             return [], [], []
+            
+    def _match_filter_condition(self, metadata: Dict, filter_condition: Dict) -> bool:
+        """
+        检查元数据是否符合筛选条件
+        
+        Args:
+            metadata: 元数据字典
+            filter_condition: 筛选条件字典
+            
+        Returns:
+            bool: 是否符合筛选条件
+        """
+        try:
+            for key, value in filter_condition.items():
+                # 处理嵌套字段，如 "file.type"
+                if "." in key:
+                    parts = key.split(".")
+                    current = metadata
+                    for part in parts[:-1]:
+                        if part not in current:
+                            return False
+                        current = current[part]
+                    if parts[-1] not in current or current[parts[-1]] != value:
+                        return False
+                # 处理简单字段
+                elif key not in metadata or metadata[key] != value:
+                    return False
+            return True
+        except Exception as e:
+            logger.error(f"应用筛选条件时出错: {str(e)}")
+            return False
     
     def delete_vectors(self, collection_name: str, ids: List[int]) -> bool:
         """
@@ -1313,44 +1399,66 @@ class FaissManager:
             collection_name: 集合名称
             
         Returns:
-            List[Dict]: 文件信息列表
+            List[Dict]: 文件信息列表，每个文件包含file_name, file_path, chunks_count等字段
         """
         if not self.collection_exists(collection_name):
             logger.error(f"集合 {collection_name} 不存在")
-            return None
+            return []
             
         # 确保文件注册表已加载
         if collection_name not in self.file_registry:
+            logger.info(f"加载集合 {collection_name} 的文件注册表")
             success = self._load_file_registry(collection_name)
             if not success:
                 logger.error(f"加载集合 {collection_name} 的文件注册表失败")
                 return []
-            
-        # 检查文件注册表是否为空
-        if not self.file_registry[collection_name]:
-            logger.warning(f"集合 {collection_name} 的文件注册表为空")
-            print(f"警告: 集合 {collection_name} 的文件注册表为空")
-            
-        # 详细调试信息
-        print(f"调试: 集合 {collection_name} 的文件注册表路径: {self._get_file_registry_path(collection_name)}")
-        print(f"调试: 文件注册表内容类型: {type(self.file_registry[collection_name])}")
-        print(f"调试: 文件注册表内容: {self.file_registry[collection_name]}")
-            
-        files_info = []
+                
         try:
-            for file_name, file_info in self.file_registry[collection_name].items():
-                print(f"处理文件: {file_name}, 信息: {file_info}")
+            logger.info(f"列出集合 {collection_name} 中的文件")
+            files_info = []
+            file_registry = self.file_registry.get(collection_name, {})
+            
+            # 过滤掉以下划线开头的元数据字段，只处理实际文件
+            for file_name, file_info in file_registry.items():
+                # 跳过元数据字段
+                if file_name.startswith('_'):
+                    continue
+                    
                 try:
+                    # 确保file_info是一个字典类型
+                    if not isinstance(file_info, dict):
+                        logger.warning(f"文件 {file_name} 的信息不是字典类型: {type(file_info)}")
+                        continue
+                    
+                    # 提取文件信息
                     file_data = {
                         'file_name': file_name,
                         'file_path': file_info.get('file_path', ''),
-                        'add_time': file_info.get('added_at', ''),
                     }
                     
+                    # 添加时间信息（可能是字符串或日期对象）
+                    added_at = file_info.get('added_at', '')
+                    if added_at:
+                        file_data['add_time'] = str(added_at)
+                    
                     # 计算向量数量
-                    if 'versions' in file_info and file_info['versions']:
-                        total_vectors = sum(v.get('vector_count', 0) for v in file_info['versions'])
-                        file_data['chunks_count'] = total_vectors
+                    if 'versions' in file_info and isinstance(file_info['versions'], list):
+                        # 获取最新版本的向量数量
+                        if file_info['versions']:
+                            current_version = file_info.get('current_version')
+                            if current_version is not None:
+                                # 查找当前版本
+                                version_info = next((v for v in file_info['versions'] if v.get('version') == current_version), None)
+                                if version_info:
+                                    file_data['chunks_count'] = version_info.get('vector_count', 0)
+                                else:
+                                    # 如果找不到当前版本，使用最后一个版本
+                                    file_data['chunks_count'] = file_info['versions'][-1].get('vector_count', 0)
+                            else:
+                                # 如果没有current_version字段，使用最后一个版本
+                                file_data['chunks_count'] = file_info['versions'][-1].get('vector_count', 0)
+                        else:
+                            file_data['chunks_count'] = 0
                     else:
                         file_data['chunks_count'] = 0
                     
@@ -1361,18 +1469,16 @@ class FaissManager:
                         file_data['file_size'] = 0
                         
                     files_info.append(file_data)
+                    logger.debug(f"已添加文件信息: {file_data}")
                 except Exception as e:
-                    print(f"处理文件 {file_name} 信息时出错: {str(e)}")
-                    # 尝试添加最基本的信息
-                    files_info.append({'file_name': file_name, 'file_path': str(file_info)})
-                
-            print(f"返回的文件信息列表: {files_info}")
+                    logger.error(f"处理文件 {file_name} 信息时出错: {str(e)}")
+                    logger.exception(e)
+            
+            logger.info(f"找到 {len(files_info)} 个文件")
             return files_info
         except Exception as e:
             logger.error(f"获取文件列表时出错: {str(e)}")
-            print(f"获取文件列表时出错: {str(e)}")
-            import traceback
-            print(traceback.format_exc())
+            logger.exception(e)
             return []
     
     def get_file_info(self, collection_name: str, file_name: str) -> Dict[str, Any]:
@@ -2278,7 +2384,6 @@ class FaissManager:
             
         except Exception as e:
             logger.error(f"诊断知识库 {collection_name} 失败: {str(e)}")
-            import traceback
             logger.error(traceback.format_exc())
             result["status"] = "error"
             result["issues"].append(f"诊断过程发生错误: {str(e)}")
@@ -2391,7 +2496,6 @@ class FaissManager:
             
         except Exception as e:
             logger.error(f"修复知识库 {collection_name} 失败: {str(e)}")
-            import traceback
             logger.error(traceback.format_exc())
             result["status"] = "error"
             result["success"] = False
@@ -2416,7 +2520,6 @@ class FaissManager:
             return True
         except Exception as e:
             logger.error(f"确保集合 {collection_name} 存在时出错: {str(e)}")
-            import traceback
             logger.error(traceback.format_exc())
             return False
 
@@ -2621,7 +2724,6 @@ class FaissManager:
             
         except Exception as e:
             logger.error(f"检查集合 {collection_name} 一致性时出错: {str(e)}")
-            import traceback
             logger.error(traceback.format_exc())
             return False
 
@@ -2643,17 +2745,17 @@ class DataLineageTracker:
         self.lineage_store.insert(lineage_record)
 
 
-# if __name__ == "__main__":
-#     faiss_manager = FaissManager()
-#     # faiss_manager.create_collection("test_collection", dimension=1536, index_type="Flat")
-#     # faiss_manager.add_vectors("test_collection", np.random.random((1000, 1536)).astype('float32'), [{"text": "test"}], "test.txt")
-#     # results = faiss_manager.search("test_collection", np.random.random((1536,)).astype('float32'), top_k=5)
-#     # print(results)
-#     files_info = faiss_manager.list_files("test")
-#     print(files_info)
-#     file_info = faiss_manager.get_file_info("test", "test.txt")
-#     print(file_info)
-#     faiss_manager.replace_file("test_collection", "test.txt", np.random.random((1000, 1536)).astype('float32'), [{"text": "test"}])
-#     faiss_manager.delete_file("test_collection", "test.txt")
-#     faiss_manager.delete_collection("test_collection")
+if __name__ == "__main__":
+    faiss_manager = FaissManager()
+    faiss_manager.create_collection("test_collection", dimension=1536, index_type="Flat")
+    faiss_manager.add_vectors("test_collection", np.random.random((1000, 1536)).astype('float32'), [{"text": "test"}], "test.txt")
+    results = faiss_manager.search("test_collection", np.random.random((1536,)).astype('float32'), top_k=5)
+    print(results)
+    # files_info = faiss_manager.list_files("test")
+    # print(files_info)
+    # file_info = faiss_manager.get_file_info("test", "test.txt")
+    # print(file_info)
+    # faiss_manager.replace_file("test_collection", "test.txt", np.random.random((1000, 1536)).astype('float32'), [{"text": "test"}])
+    # faiss_manager.delete_file("test_collection", "test.txt")
+    # faiss_manager.delete_collection("test_collection")
 

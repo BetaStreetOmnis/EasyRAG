@@ -8,6 +8,8 @@ import time
 import sys
 import locale
 from typing import List, Dict, Any
+import subprocess
+import socket
 
 # 设置默认编码为UTF-8
 if sys.platform.startswith('win'):
@@ -29,6 +31,19 @@ class RAGServiceWebUI:
             api_base_url: API服务器的基础URL
         """
         self.api_base_url = api_base_url
+        
+        # 检查API服务器连接
+        try:
+            print(f"正在检查API服务器连接: {api_base_url}")
+            response = requests.get(f"{api_base_url}/kb/list", timeout=5)
+            if response.status_code == 200:
+                print("API服务器连接正常")
+            else:
+                print(f"警告: API服务器返回非200状态码: {response.status_code}")
+        except requests.exceptions.ConnectionError:
+            print(f"警告: 无法连接到API服务器 {api_base_url}，请确保API服务器已启动")
+        except Exception as e:
+            print(f"警告: 检查API服务器时出错: {str(e)}")
         
     def create_kb(self, kb_name: str, dimension: int, index_type: str) -> str:
         """创建知识库"""
@@ -466,42 +481,113 @@ class RAGServiceWebUI:
             return pd.DataFrame([{"错误": "请输入搜索内容"}])
             
         try:
-            response = requests.post(
-                f"{self.api_base_url}/kb/search",
-                json={
+            # 构建搜索请求
+            search_params = {
                     "kb_name": kb_name,
                     "query": query,
                     "top_k": top_k,
                     "use_rerank": use_rerank
                 }
+            
+            print(f"发起搜索请求: {search_params}")
+            
+            # 先尝试使用请求的参数
+            response = requests.post(
+                f"{self.api_base_url}/kb/search",
+                json=search_params,
+                timeout=30  # 增加超时时间
             )
+            
+            # 检查是否为rerank相关错误
+            rerank_failed = False
+            if response.status_code != 200:
+                error_data = response.json() if response.content else {"detail": f"HTTP错误: {response.status_code}"}
+                error_msg = error_data.get("detail", "未知错误")
+                
+                # 检查是否为rerank相关错误
+                if "rerank" in error_msg.lower() or (use_rerank and "failed" in error_msg.lower()):
+                    print(f"检测到重排序相关错误: {error_msg}，尝试关闭重排序")
+                    rerank_failed = True
+                    
+                    # 重试请求，但关闭rerank
+                    search_params["use_rerank"] = False
+                    response = requests.post(
+                        f"{self.api_base_url}/kb/search",
+                        json=search_params,
+                        timeout=30
+                    )
+                else:
+                    # 其他类型的错误，直接返回错误信息
+                    return pd.DataFrame([{"错误": f"搜索失败: {error_msg}"}])
             
             if response.status_code == 200:
                 result = response.json()
-                print(result)
+                print(f"搜索结果: {result}")
+                
+                # 检查是否有消息提示未找到内容
                 if "message" in result and "未找到相关内容" in result["message"]:
-                    return pd.DataFrame([{"提示": "未找到相关内容"}])
+                    if rerank_failed:
+                        return pd.DataFrame([{"提示": "重排序失败且未找到相关内容。已自动关闭重排序功能。"}])
+                    else:
+                        return pd.DataFrame([{"提示": "未找到相关内容"}])
                 
                 data = result.get("data", [])
                 if not data:
-                    if use_rerank:
+                    if rerank_failed:
+                        return pd.DataFrame([{"提示": "重排序失败，已关闭重排序功能，但仍未找到相关内容。"}])
+                    elif use_rerank:
                         return pd.DataFrame([{"提示": "重排序后未找到相关内容，请尝试关闭重排序或修改搜索条件"}])
                     else:
                         return pd.DataFrame([{"提示": "未找到相关内容"}])
                 
+                # 打印每个结果项的详细内容，帮助调试
+                for i, item in enumerate(data):
+                    print(f"结果项 #{i+1}:")
+                    for key, value in item.items():
+                        if key != "metadata":
+                            print(f"  {key}: {value[:100] if isinstance(value, str) else value}")
+                        else:
+                            print(f"  metadata: {value}")
+                
                 # 转换为DataFrame，并处理内容格式
                 df_data = []
                 for i, item in enumerate(data):
-                    # 处理文本内容，添加换行以提高可读性
-                    text_content = item.get("text", "")
+                    # 查找内容字段 (优先尝试content，然后text)
+                    content = ""
+                    if "content" in item:
+                        content = item["content"]
+                    elif "text" in item:
+                        content = item["text"]
+                    
+                    if not content and isinstance(item, str):
+                        # 如果整个项是字符串，就把它当作内容
+                        content = item
+                    
                     # 每70个字符左右添加换行符，使显示更清晰
-                    formatted_text = '\n'.join([text_content[j:j+70] for j in range(0, len(text_content), 70)])
+                    formatted_text = '\n'.join([content[j:j+70] for j in range(0, len(content), 70)]) if content else ""
+                    
+                    # 如果重排序失败但普通搜索成功，添加提示
+                    note = ""
+                    if rerank_failed and i == 0:
+                        note = "（注意：重排序失败，已关闭重排序）"
+                    
+                    # 尝试获取元数据中的来源信息
+                    metadata = item.get("metadata", {})
+                    source = "未知"
+                    if isinstance(metadata, dict):
+                        # 尝试多种可能的来源字段
+                        if "source" in metadata:
+                            source = metadata["source"]
+                        elif "file_name" in metadata:
+                            source = metadata["file_name"]
+                        elif "document_id" in metadata:
+                            source = metadata["document_id"]
                     
                     df_data.append({
                         "序号": i + 1,
-                        "内容": formatted_text,
+                        "内容": formatted_text + note,
                         "相关度": round(item.get("score", 0), 3),
-                        "来源": item.get("metadata", {}).get("source", "未知")
+                        "来源": source
                     })
                 
                 # 设置DataFrame的样式
@@ -514,7 +600,12 @@ class RAGServiceWebUI:
             error_msg = f"搜索知识库失败: {str(e)}"
             error_trace = traceback.format_exc()
             print(f"{error_msg}\n{error_trace}")
-            return pd.DataFrame([{"错误": error_msg}])
+            
+            # 如果是因为重排序失败，提供更明确的提示
+            if "rerank" in str(e).lower():
+                return pd.DataFrame([{"错误": f"重排序失败: {str(e)}，请尝试关闭重排序选项"}])
+            else:
+                return pd.DataFrame([{"错误": error_msg}])
     
     def chat_with_kb(self, kb_name: str, query: str, history: List[List[str]], top_k: int, temperature: float) -> tuple:
         """与知识库对话"""
@@ -569,6 +660,90 @@ class RAGServiceWebUI:
         body {
             font-family: 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
             background-color: #f9f9f9;
+        }
+        
+        /* 修复Gradio下拉框不可选择的问题 */
+        .gradio-dropdown {
+            pointer-events: auto !important;
+            z-index: 200 !important;
+        }
+        
+        select.gr-box {
+            pointer-events: auto !important;
+            opacity: 1 !important;
+            z-index: 200 !important;
+        }
+        
+        /* 确保下拉菜单显示在上层 */
+        .gr-form > div[data-testid="dropdown"] {
+            z-index: 100 !important;
+        }
+        
+        /* 确保按钮可点击 */
+        button, .gr-button {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            opacity: 1 !important;
+            position: relative !important;
+            z-index: 50 !important;
+        }
+        
+        /* 上传按钮特别修复 */
+        button[aria-label="上传文件"] {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            z-index: 100 !important;
+        }
+        
+        /* 修复Radio按钮组无法选择的问题 - 强化版 */
+        .gr-radio-group {
+            pointer-events: auto !important;
+            z-index: 100 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+        }
+        
+        /* 特别强调单选按钮的交互性 */
+        input[type="radio"] {
+            pointer-events: auto !important;
+            opacity: 1 !important;
+            cursor: pointer !important;
+            margin-right: 5px !important;
+            position: static !important;
+            width: auto !important;
+            height: auto !important;
+            min-width: 16px !important;
+            min-height: 16px !important;
+            appearance: auto !important;
+            -webkit-appearance: radio !important;
+            display: inline-block !important;
+            z-index: 300 !important;
+        }
+        
+        /* 确保标签可以正确点击 */
+        .gr-radio-group label {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            margin: 5px 0 !important;
+            padding: 8px !important;
+            border-radius: 4px !important;
+            background-color: rgba(255, 255, 255, 0.8) !important;
+            border: 1px solid #ddd !important;
+            position: relative !important;
+            z-index: 200 !important;
+        }
+        
+        .gr-radio-group label:hover {
+            background-color: rgba(74, 111, 165, 0.1) !important;
+            border-color: #4a6fa5 !important;
+        }
+        
+        /* 强制垂直布局 */
+        .gr-radio-group[orientation="vertical"] {
+            flex-direction: column !important;
         }
         
         /* 标题样式 */
@@ -683,22 +858,27 @@ class RAGServiceWebUI:
             width: 100%;
             border-collapse: collapse;
             margin: 15px 0;
+            background-color: white;
         }
         
         table th {
             background-color: #4a6fa5;
-            color: white;
+            color: white !important;  /* 强制白色文本 */
             padding: 10px;
             text-align: left;
+            font-weight: bold;
+            border: 1px solid #3a5a8a;
         }
         
         table td {
             padding: 8px 10px;
             border-bottom: 1px solid #ddd;
+            color: #333;  /* 深色文本 */
+            background-color: #f9f9f9;
         }
         
-        table tr:nth-child(even) {
-            background-color: #f9f9f9;
+        table tr:nth-child(even) td {
+            background-color: #f2f2f2;
         }
         
         /* 颜色主题 */
@@ -707,9 +887,202 @@ class RAGServiceWebUI:
         .theme-accent { color: #66bb6a; }
         .theme-warning { color: #ffa726; }
         .theme-error { color: #ef5350; }
+        
+        /* 强制表格样式 - 确保标题可见 */
+        .gr-dataframe table th,
+        .gradio-container table th,
+        table.gr-table th,
+        div.gradio-table th,
+        div.gr-table-container th {
+            background-color: #4a6fa5 !important;
+            color: white !important;
+            font-weight: bold !important;
+            text-shadow: none !important;
+            border: 1px solid #3a5a8a !important;
+            opacity: 1 !important;
+            padding: 10px !important;
+        }
+        
+        /* 确保表格单元格内容可见 */
+        .gr-dataframe table td,
+        .gradio-container table td,
+        table.gr-table td,
+        div.gradio-table td,
+        div.gr-table-container td {
+            color: #333 !important;
+            background-color: #f9f9f9 !important;
+            padding: 8px 10px !important;
+            border: 1px solid #ddd !important;
+            text-align: left !important;
+        }
+        
+        /* 隔行变色以提高可读性 */
+        .gr-dataframe table tr:nth-child(2n) td,
+        .gradio-container table tr:nth-child(2n) td,
+        table.gr-table tr:nth-child(2n) td,
+        div.gradio-table tr:nth-child(2n) td,
+        div.gr-table-container tr:nth-child(2n) td {
+            background-color: #f0f0f0 !important;
+        }
+        
+        /* 确保表格内所有文本元素可见 */
+        .gr-dataframe th span, 
+        .gr-dataframe td span,
+        .gradio-container th span,
+        .gradio-container td span,
+        table.gr-table th span,
+        table.gr-table td span {
+            color: inherit !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
         """
         
-        with gr.Blocks(css=custom_css, title="知识库检索增强生成(RAG)服务") as demo:
+        # 添加修复下拉框问题的CSS和JS
+        custom_css += """
+        /* 修复下拉框显示问题 */
+        .gr-dropdown {
+            position: relative;
+            z-index: 100;
+        }
+        
+        .gr-dropdown-container {
+            position: relative;
+            z-index: 101;
+        }
+        
+        /* 确保下拉框可点击 */
+        select.gr-box {
+            pointer-events: auto !important;
+            opacity: 1 !important;
+            cursor: pointer !important;
+        }
+        """
+        
+        # 添加自定义JS以确保下拉框正常工作
+        custom_js = """
+        function fixDropdowns() {
+            // 查找所有下拉框元素
+            const dropdowns = document.querySelectorAll('select.gr-box');
+            
+            // 确保它们可以交互
+            dropdowns.forEach(dropdown => {
+                dropdown.style.pointerEvents = 'auto';
+                dropdown.style.opacity = '1';
+                dropdown.style.cursor = 'pointer';
+                
+                // 移除可能阻止交互的属性
+                dropdown.removeAttribute('disabled');
+                dropdown.removeAttribute('readonly');
+            });
+            
+            console.log('已修复下拉框交互问题');
+        }
+        
+        function fixRadioButtons() {
+            // 查找所有单选按钮和它们的标签
+            const radioInputs = document.querySelectorAll('input[type="radio"]');
+            const radioLabels = document.querySelectorAll('.gr-radio-group label');
+            
+            console.log('找到 ' + radioInputs.length + ' 个Radio按钮');
+            
+            // 确保单选按钮可以交互
+            radioInputs.forEach((radio, index) => {
+                // 强制设置样式和属性
+                radio.style.pointerEvents = 'auto';
+                radio.style.opacity = '1';
+                radio.style.cursor = 'pointer';
+                radio.style.position = 'relative';
+                radio.style.zIndex = '200';
+                radio.style.display = 'inline-block';
+                
+                // 移除可能阻止交互的属性
+                radio.disabled = false;
+                radio.readOnly = false;
+            });
+            
+            // 确保标签可以交互
+            radioLabels.forEach((label, index) => {
+                // 强制设置样式
+                label.style.pointerEvents = 'auto';
+                label.style.cursor = 'pointer';
+                label.style.position = 'relative';
+                label.style.zIndex = '150';
+            });
+            
+            // 确保不会干扰上传按钮和其他功能按钮
+            document.querySelectorAll('button').forEach(button => {
+                if (!(button.onclick && button.onclick.toString().includes('setChunkMethod') ||
+                    button.onclick && button.onclick.toString().includes('setLoadKbChunkMethod') ||
+                    button.onclick && button.onclick.toString().includes('setReplaceChunkMethod'))) {
+                    // 为非备用按钮恢复正常样式和功能
+                    button.style.pointerEvents = 'auto';
+                    button.style.cursor = 'pointer';
+                    button.style.zIndex = 'auto';
+                }
+            });
+            
+            console.log('已修复单选按钮交互问题，并保留其他按钮功能');
+        }
+        
+        // 延迟一点时间执行修复，避免与Gradio初始化冲突
+        setTimeout(function() {
+            console.log('开始执行UI修复');
+            fixDropdowns();
+            fixRadioButtons();
+        }, 1000);
+        """
+        
+        # 添加控制列宽比例的CSS
+        custom_css += """
+        /* 控制表格列宽比例 */
+        .gr-dataframe table col:nth-child(1),
+        table.gr-table col:nth-child(1) {
+            width: 10% !important; /* 序号列 */
+        }
+
+        .gr-dataframe table col:nth-child(2),
+        table.gr-table col:nth-child(2) {
+            width: 60% !important; /* 内容列 - 给最大宽度 */
+        }
+
+        .gr-dataframe table col:nth-child(3),
+        table.gr-table col:nth-child(3) {
+            width: 15% !important; /* 相关度列 */
+        }
+
+        .gr-dataframe table col:nth-child(4),
+        table.gr-table col:nth-child(4) {
+            width: 15% !important; /* 来源列 */
+        }
+
+        /* 确保内容列有足够的行高 */
+        .gr-dataframe td:nth-child(2),
+        table.gr-table td:nth-child(2) {
+            min-height: 100px !important;
+            height: auto !important;
+            white-space: pre-wrap !important;
+            word-break: break-word !important;
+            vertical-align: top !important;
+        }
+
+        /* 让其他列靠上对齐并控制行高 */
+        .gr-dataframe td,
+        table.gr-table td {
+            vertical-align: top !important;
+            padding-top: 8px !important;
+            line-height: 1.4 !important;
+        }
+
+        /* 强制应用表格布局算法，防止自动调整 */
+        .gr-dataframe table,
+        table.gr-table {
+            table-layout: fixed !important;
+            width: 100% !important;
+        }
+        """
+        
+        with gr.Blocks(css=custom_css, js=custom_js, title="知识库检索增强生成(RAG)服务") as demo:
             gr.Markdown(
                 """
                 # 📚 知识库检索增强生成(RAG)服务
@@ -767,7 +1140,7 @@ class RAGServiceWebUI:
                                     upload_files = gr.File(label="选择文件", file_count="multiple")
                                 
                                 with gr.Row():
-                                    chunk_method = gr.Dropdown(
+                                    chunk_method = gr.Radio(
                                         label="分块方法", 
                                         choices=[
                                             "text_semantic", 
@@ -777,7 +1150,11 @@ class RAGServiceWebUI:
                                             "recursive_character", 
                                             "bm25"
                                         ], 
-                                        value="text_semantic"
+                                        value="text_semantic",
+                                        interactive=True,
+                                        elem_id="chunk_method_radio",
+                                        container=True,
+                                        orientation="vertical"
                                     )
                                 chunk_method_info = gr.HTML("""
                                 <div style="font-size: 0.8em; color: #666; margin-top: 0.5em;">
@@ -795,7 +1172,39 @@ class RAGServiceWebUI:
                                     chunk_size = gr.Slider(label="分块大小", minimum=200, maximum=2000, step=100, value=1000)
                                     chunk_overlap = gr.Slider(label="分块重叠", minimum=0, maximum=500, step=50, value=200)
                                 
-                                upload_btn = gr.Button("上传文件", variant="primary")
+                                upload_btn = gr.Button("上传文件", variant="primary", elem_id="upload_file_button")
+                                # 添加上传按钮特别处理的JavaScript
+                                gr.HTML("""
+                                <script>
+                                // 确保上传按钮功能正常
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    // 等待Gradio完全加载
+                                    setTimeout(function() {
+                                        const uploadBtn = document.getElementById('upload_file_button');
+                                        if (uploadBtn) {
+                                            console.log('找到上传按钮，确保其可点击');
+                                            // 移除可能阻止点击的样式
+                                            uploadBtn.style.pointerEvents = 'auto';
+                                            uploadBtn.style.cursor = 'pointer';
+                                            uploadBtn.style.opacity = '1';
+                                            uploadBtn.style.zIndex = '500';
+                                            
+                                            // 添加visual feedback
+                                            uploadBtn.addEventListener('mouseover', function() {
+                                                this.style.backgroundColor = '#3a5c8b';
+                                            });
+                                            uploadBtn.addEventListener('mouseout', function() {
+                                                this.style.backgroundColor = '';
+                                            });
+                                            
+                                            console.log('上传按钮已设置为可点击状态');
+                                        } else {
+                                            console.log('未找到上传按钮');
+                                        }
+                                    }, 1500);
+                                });
+                                </script>
+                                """)
                                 # 添加进度显示区域
                                 upload_progress = gr.HTML("", label="上传进度")
                                 upload_result = gr.Textbox(label="上传结果", lines=5, interactive=False)
@@ -807,7 +1216,7 @@ class RAGServiceWebUI:
                                 
                                 gr.Markdown("### 分块设置")
                                 with gr.Row():
-                                    load_kb_chunk_method = gr.Dropdown(
+                                    load_kb_chunk_method = gr.Radio(
                                         label="分块方法", 
                                         choices=[
                                             "text_semantic", 
@@ -817,7 +1226,11 @@ class RAGServiceWebUI:
                                             "recursive_character", 
                                             "bm25"
                                         ], 
-                                        value="text_semantic"
+                                        value="text_semantic",
+                                        interactive=True,
+                                        elem_id="load_kb_chunk_method_radio",
+                                        container=True,
+                                        orientation="vertical"
                                     )
                                 load_kb_chunk_method_info = gr.HTML("""
                                 <div style="font-size: 0.8em; color: #666; margin-top: 0.5em;">
@@ -829,6 +1242,47 @@ class RAGServiceWebUI:
                                     • <b>recursive_character</b>: 递归字符分块，适用于无明显结构的纯文本<br>
                                     • <b>bm25</b>: 基于BM25算法的分块，适合信息检索场景
                                 </div>
+                                
+                                <div style="margin-top: 10px; border: 1px dashed #ccc; padding: 8px; border-radius: 5px;">
+                                    <p><b>如果上方的分块方法无法选择，请使用下面的备用按钮：</b></p>
+                                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                                        <button onclick="setChunkMethod('text_semantic')" style="padding: 5px; background: #e6f7ff; border: 1px solid #91d5ff; border-radius: 4px; cursor: pointer;">选择: text_semantic</button>
+                                        <button onclick="setChunkMethod('semantic')" style="padding: 5px; background: #fff; border: 1px solid #d9d9d9; border-radius: 4px; cursor: pointer;">选择: semantic</button>
+                                        <button onclick="setChunkMethod('hierarchical')" style="padding: 5px; background: #fff; border: 1px solid #d9d9d9; border-radius: 4px; cursor: pointer;">选择: hierarchical</button>
+                                        <button onclick="setChunkMethod('markdown_header')" style="padding: 5px; background: #fff; border: 1px solid #d9d9d9; border-radius: 4px; cursor: pointer;">选择: markdown_header</button>
+                                        <button onclick="setChunkMethod('recursive_character')" style="padding: 5px; background: #fff; border: 1px solid #d9d9d9; border-radius: 4px; cursor: pointer;">选择: recursive_character</button>
+                                        <button onclick="setChunkMethod('bm25')" style="padding: 5px; background: #fff; border: 1px solid #d9d9d9; border-radius: 4px; cursor: pointer;">选择: bm25</button>
+                                    </div>
+                                </div>
+                                
+                                <script>
+                                function setChunkMethod(method) {
+                                    // 找到目标Radio组件的所有Radio按钮
+                                    const radioButtons = document.querySelectorAll('#chunk_method_radio input[type="radio"]');
+                                    
+                                    // 遍历并设置对应值的按钮为选中状态
+                                    radioButtons.forEach(radio => {
+                                        if (radio.value === method) {
+                                            radio.checked = true;
+                                            // 触发change事件
+                                            const event = new Event('change', {bubbles: true});
+                                            radio.dispatchEvent(event);
+                                            
+                                            // 更新按钮样式
+                                            document.querySelectorAll('button[onclick^="setChunkMethod"]').forEach(btn => {
+                                                btn.style.background = '#fff';
+                                                btn.style.borderColor = '#d9d9d9';
+                                            });
+                                            
+                                            // 高亮选中的按钮
+                                            document.querySelector(`button[onclick="setChunkMethod('${method}')"]`).style.background = '#e6f7ff';
+                                            document.querySelector(`button[onclick="setChunkMethod('${method}')"]`).style.borderColor = '#91d5ff';
+                                        }
+                                    });
+                                    
+                                    console.log('通过备用按钮设置分块方法为: ' + method);
+                                }
+                                </script>
                                 """)
                                 
                                 with gr.Row():
@@ -836,7 +1290,7 @@ class RAGServiceWebUI:
                                     load_kb_chunk_overlap = gr.Slider(label="分块重叠", minimum=0, maximum=500, step=50, value=200)
                                 
                                 with gr.Row():
-                                    load_kb_btn = gr.Button("导入知识库", variant="primary")
+                                    load_kb_btn = gr.Button("导入知识库", variant="primary", elem_id="load_kb_button")
                                     load_kb_format_info = gr.HTML("""
                                     <div style="font-size: 0.8em; color: #666; margin-top: 0.5em;">
                                         <b>支持的数据格式：</b><br>
@@ -845,6 +1299,26 @@ class RAGServiceWebUI:
                                         • <b>XML文件</b>: 包含文档标签的结构化XML<br>
                                         • <b>文本文件(.txt)</b>: 将按段落自动分割<br>
                                     </div>
+                                    
+                                    <script>
+                                    // 确保导入知识库按钮功能正常
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        // 等待Gradio完全加载
+                                        setTimeout(function() {
+                                            const loadKbBtn = document.getElementById('load_kb_button');
+                                            if (loadKbBtn) {
+                                                console.log('找到导入知识库按钮，确保其可点击');
+                                                // 移除可能阻止点击的样式
+                                                loadKbBtn.style.pointerEvents = 'auto';
+                                                loadKbBtn.style.cursor = 'pointer';
+                                                loadKbBtn.style.opacity = '1';
+                                                loadKbBtn.style.zIndex = '500';
+                                                
+                                                console.log('导入知识库按钮已设置为可点击状态');
+                                            }
+                                        }, 1500);
+                                    });
+                                    </script>
                                     """)
                                 
                                 load_kb_progress = gr.HTML("", label="导入进度")
@@ -882,7 +1356,7 @@ class RAGServiceWebUI:
                                 new_file = gr.File(label="选择新文件")
                                 
                                 with gr.Row():
-                                    replace_chunk_method = gr.Dropdown(
+                                    replace_chunk_method = gr.Radio(
                                         label="分块方法", 
                                         choices=[
                                             "text_semantic", 
@@ -892,14 +1366,40 @@ class RAGServiceWebUI:
                                             "recursive_character", 
                                             "bm25"
                                         ], 
-                                        value="text_semantic"
+                                        value="text_semantic",
+                                        interactive=True,
+                                        elem_id="replace_chunk_method_radio",
+                                        container=True,
+                                        orientation="vertical"
                                     )
                                     
                                 with gr.Row():
                                     replace_chunk_size = gr.Slider(label="块大小", minimum=200, maximum=2000, step=100, value=1000)
                                     replace_chunk_overlap = gr.Slider(label="重叠大小", minimum=0, maximum=500, step=50, value=200)
                                 
-                                replace_file_btn = gr.Button("替换文件", variant="primary")
+                                replace_file_btn = gr.Button("替换文件", variant="primary", elem_id="replace_file_button")
+                                # 添加替换按钮特别处理
+                                gr.HTML("""
+                                <script>
+                                // 确保替换文件按钮功能正常
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    // 等待Gradio完全加载
+                                    setTimeout(function() {
+                                        const replaceBtn = document.getElementById('replace_file_button');
+                                        if (replaceBtn) {
+                                            console.log('找到替换文件按钮，确保其可点击');
+                                            // 移除可能阻止点击的样式
+                                            replaceBtn.style.pointerEvents = 'auto';
+                                            replaceBtn.style.cursor = 'pointer';
+                                            replaceBtn.style.opacity = '1';
+                                            replaceBtn.style.zIndex = '500';
+                                            
+                                            console.log('替换文件按钮已设置为可点击状态');
+                                        }
+                                    }, 1500);
+                                });
+                                </script>
+                                """)
                                 replace_result = gr.Textbox(label="替换结果", interactive=False)
                         
                         with gr.Column(scale=1):
@@ -930,7 +1430,11 @@ class RAGServiceWebUI:
                                 search_query = gr.Textbox(label="检索问题", placeholder="输入问题...", lines=3)
                                 with gr.Row():
                                     top_k = gr.Slider(label="返回结果数量", minimum=1, maximum=10, step=1, value=5)
-                                    use_rerank = gr.Checkbox(label="使用重排序", value=True)
+                                    use_rerank = gr.Checkbox(
+                                        label="使用重排序", 
+                                        value=False,  # 默认关闭重排序
+                                        info="开启可提高相关性，但可能偶尔失败。如遇问题请关闭。"
+                                    )
                                 
                                 search_btn = gr.Button("检索", variant="primary")
                         
@@ -939,8 +1443,11 @@ class RAGServiceWebUI:
                                 gr.Markdown("### 检索结果")
                                 search_results = gr.Dataframe(
                                     headers=["序号", "内容", "相关度", "来源"],
-                                    datatype=["number", "str", "number", "str"],
-                                    row_count=10
+                                    datatype=["number", "html", "number", "str"],  # 注意这里"str"改为"html"
+                                    row_count=10,
+                                    wrap=True,  # 启用文本换行
+                                    height=400,  # 增加高度
+                                    max_cols=4   # 限制最大列数
                                 )
                 
                 with gr.TabItem("💬 知识库对话", id="kb_chat"):
@@ -962,6 +1469,12 @@ class RAGServiceWebUI:
                                 chat_input = gr.Textbox(label="问题", placeholder="输入问题...", lines=2)
                                 chat_btn = gr.Button("发送", variant="primary")
             
+            # 添加分块方法的事件处理函数
+            def on_chunk_method_change(value):
+                print(f"分块方法已更改为: {value}")
+                # 添加一些交互性反馈
+                return gr.update(value=value, interactive=True)
+                
             # 绑定事件
             create_kb_btn.click(
                 fn=self.create_kb,
@@ -975,6 +1488,25 @@ class RAGServiceWebUI:
             refresh_kb_btn.click(
                 fn=self._refresh_kb_lists,
                 outputs=[kb_list, kb_to_delete, upload_kb_name, search_kb_name, chat_kb_name, kb_info_dropdown, file_mgr_kb_name, load_kb_name]
+            )
+            
+            # 修改事件绑定方式，改用详细的change方法而非之前的简单绑定
+            chunk_method.change(
+                fn=on_chunk_method_change,
+                inputs=[chunk_method],
+                outputs=[chunk_method]
+            )
+            
+            load_kb_chunk_method.change(
+                fn=on_chunk_method_change,
+                inputs=[load_kb_chunk_method],
+                outputs=[load_kb_chunk_method]
+            )
+            
+            replace_chunk_method.change(
+                fn=on_chunk_method_change,
+                inputs=[replace_chunk_method],
+                outputs=[replace_chunk_method]
             )
             
             # 导入知识库按钮事件
@@ -1115,13 +1647,14 @@ class RAGServiceWebUI:
                     return gr.update(visible=True), f"已选择文件: {os.path.basename(file_path)}"
                 except Exception as e:
                     return gr.update(visible=True), f"文件选择错误: {str(e)}"
-
+  
             load_kb_file.change(
                 fn=on_load_kb_file_change,
                 inputs=load_kb_file,
                 outputs=[load_kb_progress, load_kb_result]
             )
             
+            # 添加界面初始化代码
             # 初始化
             demo.load(
                 fn=self._refresh_kb_lists,
@@ -1377,9 +1910,28 @@ class RAGServiceWebUI:
 # 便捷启动函数
 def launch_ui(api_base_url: str = "http://localhost:8000", share: bool = False, server_name: str = "0.0.0.0", server_port: int = 7861):
     """启动知识库管理界面"""
-    ui = RAGServiceWebUI(api_base_url=api_base_url)
-    ui.launch(share=share, server_name=server_name, server_port=server_port)
+    print("="*60)
+    print("正在启动知识库管理界面...")
+    print(f"API服务器地址: {api_base_url}")
+    print(f"UI服务端口: {server_port}")
+    print("="*60)
+    
+    try:
+        ui = RAGServiceWebUI(api_base_url=api_base_url)
+        ui.launch(share=share, server_name=server_name, server_port=server_port)
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        print(f"启动UI界面失败: {str(e)}")
+        print(f"错误详情:\n{error_trace}")
+        print("请检查API服务器是否已启动，地址是否正确")
 
 
 if __name__ == "__main__":
-    launch_ui()
+    print("RAG知识库管理系统 - UI服务启动中...")
+    try:
+        launch_ui()
+    except KeyboardInterrupt:
+        print("\n用户中断，UI服务已停止")
+    except Exception as e:
+        print(f"启动失败: {str(e)}")
+        traceback.print_exc()
