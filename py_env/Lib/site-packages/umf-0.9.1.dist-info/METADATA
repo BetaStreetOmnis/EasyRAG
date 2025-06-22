@@ -1,0 +1,24 @@
+Metadata-Version: 2.1
+Name: umf
+Version: 0.9.1
+Summary: Unified Memory Framework
+Home-page: https://github.com/oneapi-src/unified-memory-framework
+Author: Intel Corporation
+Author-email: scripting@intel.com
+License: Intel Simplified Software License
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: System Administrators
+Classifier: Intended Audience :: Other Audience
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Software Development :: Libraries
+Classifier: License :: Other/Proprietary License
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+Requires-Dist: tcmlib ==1.2
+
+Construct allocators and memory pools. Manage multiple memory pools characterized by different attributes, allowing certain allocation types to be isolated from others and allocated using different hardware resources as required.
+

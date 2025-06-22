@@ -1,0 +1,1 @@
+{"version":3,"file":"index-74850412.js","sources":["../../../../js/app/src/components/Textbox/index.ts"],"sourcesContent":["export { default as Component } from \"@gradio/textbox\";\nexport const modes = [\"static\", \"dynamic\"];\n"],"names":["modes"],"mappings":"wLACa,MAAAA,EAAQ,CAAC,SAAU,SAAS"}

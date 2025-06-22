@@ -1192,10 +1192,10 @@ class RAGServiceWebUI:
         }
         """
         
-        with gr.Blocks(css=custom_css, js=custom_js, title="知识库检索增强生成(RAG)服务") as demo:
+        with gr.Blocks(css=custom_css, js=custom_js, title="Fluidgen-AI知识库管理系统") as demo:
             gr.Markdown(
                 """
-                # 📚 知识库检索增强生成(RAG)服务
+                # 📚 Fluidgen-AI知识库管理系统
                 
                 这是一个基于向量数据库的知识库检索系统，支持多种文件格式的导入、分块和检索。
                 """
@@ -1736,7 +1736,7 @@ def launch_ui(api_base_url: str = "http://localhost:8023", share: bool = False, 
 
 
 if __name__ == "__main__":
-    print("RAG知识库管理系统 - UI服务启动中...")
+    print("Fluidgen-AI知识库管理系统 - UI服务启动中...")
     try:
         launch_ui()
     except KeyboardInterrupt:

@@ -1,0 +1,832 @@
+Metadata-Version: 2.1
+Name: modelscope
+Version: 1.23.2
+Summary: ModelScope: bring the notion of Model-as-a-Service to life.
+Home-page: https://github.com/modelscope/modelscope
+Author: ModelScope team
+Author-email: contact@modelscope.cn
+License: Apache License 2.0
+Keywords: python,nlp,science,cv,speech,multi-modal
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Description-Content-Type: text/markdown
+Requires-Dist: requests>=2.25
+Requires-Dist: tqdm>=4.64.0
+Requires-Dist: urllib3>=1.26
+Provides-Extra: all
+Requires-Dist: accelerate; extra == "all"
+Requires-Dist: albumentations>=1.0.3; extra == "all"
+Requires-Dist: av>=9.2.0; extra == "all"
+Requires-Dist: bmt-clipit>=1.0; extra == "all"
+Requires-Dist: chumpy; extra == "all"
+Requires-Dist: clip>=1.0; extra == "all"
+Requires-Dist: control-ldm; extra == "all"
+Requires-Dist: ddpm-guided-diffusion; extra == "all"
+Requires-Dist: diffusers; extra == "all"
+Requires-Dist: easydict; extra == "all"
+Requires-Dist: edit-distance; extra == "all"
+Requires-Dist: face-alignment>=1.3.5; extra == "all"
+Requires-Dist: fairscale>=0.4.1; extra == "all"
+Requires-Dist: fastai>=1.0.51; extra == "all"
+Requires-Dist: ffmpeg>=1.4; extra == "all"
+Requires-Dist: ffmpeg-python>=0.2.0; extra == "all"
+Requires-Dist: ftfy; extra == "all"
+Requires-Dist: fvcore; extra == "all"
+Requires-Dist: imageio>=2.9.0; extra == "all"
+Requires-Dist: imageio-ffmpeg>=0.4.2; extra == "all"
+Requires-Dist: imgaug>=0.4.0; extra == "all"
+Requires-Dist: kornia>=0.5.0; extra == "all"
+Requires-Dist: lmdb; extra == "all"
+Requires-Dist: lpips; extra == "all"
+Requires-Dist: matplotlib>=3.8.0; extra == "all"
+Requires-Dist: ml-collections; extra == "all"
+Requires-Dist: mmcls>=0.21.0; extra == "all"
+Requires-Dist: mmdet<=2.28.2,>=2.25.0; extra == "all"
+Requires-Dist: mmdet3d==1.0.0a1; extra == "all"
+Requires-Dist: mmsegmentation<=0.30.0; extra == "all"
+Requires-Dist: moviepy==1.0.3; extra == "all"
+Requires-Dist: nerfacc==0.2.2; extra == "all"
+Requires-Dist: networkx; extra == "all"
+Requires-Dist: numba; extra == "all"
+Requires-Dist: omegaconf; extra == "all"
+Requires-Dist: onnx; extra == "all"
+Requires-Dist: onnxruntime>=1.10; extra == "all"
+Requires-Dist: onnxsim; extra == "all"
+Requires-Dist: open-clip-torch>=2.7.0; extra == "all"
+Requires-Dist: opencv-python; extra == "all"
+Requires-Dist: paint-ldm; extra == "all"
+Requires-Dist: pandas; extra == "all"
+Requires-Dist: panopticapi; extra == "all"
+Requires-Dist: Pillow>=6.2.0; extra == "all"
+Requires-Dist: plyfile>=0.7.4; extra == "all"
+Requires-Dist: psutil; extra == "all"
+Requires-Dist: pyclipper; extra == "all"
+Requires-Dist: PyMCubes<=0.1.4; extra == "all"
+Requires-Dist: pytorch-lightning; extra == "all"
+Requires-Dist: regex; extra == "all"
+Requires-Dist: scikit-image; extra == "all"
+Requires-Dist: scikit-learn; extra == "all"
+Requires-Dist: shapely; extra == "all"
+Requires-Dist: shotdetect-scenedetect-lgss>=0.0.4; extra == "all"
+Requires-Dist: smplx; extra == "all"
+Requires-Dist: tensorflow-estimator>=1.15.1; extra == "all"
+Requires-Dist: tf-slim; extra == "all"
+Requires-Dist: thop; extra == "all"
+Requires-Dist: timm>=0.4.9; extra == "all"
+Requires-Dist: torch-scatter; extra == "all"
+Requires-Dist: torchmetrics>=0.6.2; extra == "all"
+Requires-Dist: torchsummary>=1.5.1; extra == "all"
+Requires-Dist: torchvision; extra == "all"
+Requires-Dist: tqdm; extra == "all"
+Requires-Dist: transformers>=4.26.0; extra == "all"
+Requires-Dist: trimesh; extra == "all"
+Requires-Dist: ujson; extra == "all"
+Requires-Dist: utils; extra == "all"
+Requires-Dist: videofeatures-clipit>=1.0; extra == "all"
+Requires-Dist: yacs; extra == "all"
+Requires-Dist: addict; extra == "all"
+Requires-Dist: attrs; extra == "all"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "all"
+Requires-Dist: einops; extra == "all"
+Requires-Dist: oss2; extra == "all"
+Requires-Dist: Pillow; extra == "all"
+Requires-Dist: python-dateutil>=2.1; extra == "all"
+Requires-Dist: scipy; extra == "all"
+Requires-Dist: setuptools==69.5.1; extra == "all"
+Requires-Dist: simplejson>=3.3.0; extra == "all"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "all"
+Requires-Dist: urllib3>=1.26; extra == "all"
+Requires-Dist: transformers; extra == "all"
+Requires-Dist: requests>=2.25; extra == "all"
+Requires-Dist: tqdm>=4.64.0; extra == "all"
+Requires-Dist: cloudpickle; extra == "all"
+Requires-Dist: decord>=0.6.0; extra == "all"
+Requires-Dist: diffusers>=0.25.0; extra == "all"
+Requires-Dist: fairseq==0.12.2; extra == "all"
+Requires-Dist: ftfy>=6.0.3; extra == "all"
+Requires-Dist: librosa==0.10.1; extra == "all"
+Requires-Dist: pycocoevalcap>=1.2; extra == "all"
+Requires-Dist: pycocotools>=2.0.4; extra == "all"
+Requires-Dist: pydot; extra == "all"
+Requires-Dist: pytorch-lightning<=1.7.7; extra == "all"
+Requires-Dist: rapidfuzz; extra == "all"
+Requires-Dist: rouge-score<=0.0.4; extra == "all"
+Requires-Dist: sacrebleu; extra == "all"
+Requires-Dist: safetensors; extra == "all"
+Requires-Dist: soundfile; extra == "all"
+Requires-Dist: taming-transformers-rom1504; extra == "all"
+Requires-Dist: timm; extra == "all"
+Requires-Dist: tokenizers; extra == "all"
+Requires-Dist: transformers>=4.27.1; extra == "all"
+Requires-Dist: unicodedata2; extra == "all"
+Requires-Dist: zhconv; extra == "all"
+Requires-Dist: boto3; extra == "all"
+Requires-Dist: embeddings; extra == "all"
+Requires-Dist: filelock; extra == "all"
+Requires-Dist: jieba>=0.42.1; extra == "all"
+Requires-Dist: matplotlib; extra == "all"
+Requires-Dist: megatron-util; extra == "all"
+Requires-Dist: nltk; extra == "all"
+Requires-Dist: protobuf<3.21.0,>=3.19.0; extra == "all"
+Requires-Dist: pythainlp; extra == "all"
+Requires-Dist: pyvi; extra == "all"
+Requires-Dist: rouge; extra == "all"
+Requires-Dist: sacremoses>=0.0.41; extra == "all"
+Requires-Dist: sentencepiece; extra == "all"
+Requires-Dist: seqeval; extra == "all"
+Requires-Dist: spacy<=3.7.0,>=2.3.5; extra == "all"
+Requires-Dist: stanza; extra == "all"
+Requires-Dist: subword-nmt>=0.3.8; extra == "all"
+Requires-Dist: termcolor; extra == "all"
+Requires-Dist: transformers>=4.12.0; extra == "all"
+Requires-Dist: biopython; extra == "all"
+Requires-Dist: iopath; extra == "all"
+Requires-Dist: ipdb; extra == "all"
+Requires-Dist: tensorboardX; extra == "all"
+Requires-Dist: fastapi; extra == "all"
+Requires-Dist: sse-starlette; extra == "all"
+Requires-Dist: uvicorn; extra == "all"
+Provides-Extra: audio
+Requires-Dist: addict; extra == "audio"
+Requires-Dist: attrs; extra == "audio"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "audio"
+Requires-Dist: einops; extra == "audio"
+Requires-Dist: Pillow; extra == "audio"
+Requires-Dist: python-dateutil>=2.1; extra == "audio"
+Requires-Dist: scipy; extra == "audio"
+Requires-Dist: setuptools==69.5.1; extra == "audio"
+Requires-Dist: simplejson>=3.3.0; extra == "audio"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "audio"
+Requires-Dist: transformers; extra == "audio"
+Requires-Dist: urllib3>=1.26; extra == "audio"
+Requires-Dist: funasr>=1.0.0; extra == "audio"
+Requires-Dist: kaldiio; extra == "audio"
+Requires-Dist: kwsbp>=0.0.6; extra == "audio"
+Requires-Dist: matplotlib; extra == "audio"
+Requires-Dist: py-sound-connect>=0.1; extra == "audio"
+Requires-Dist: SoundFile>0.10; extra == "audio"
+Requires-Dist: tensorboardX; extra == "audio"
+Requires-Dist: hdbscan; extra == "audio"
+Requires-Dist: hyperpyyaml; extra == "audio"
+Requires-Dist: librosa==0.10.1; extra == "audio"
+Requires-Dist: MinDAEC; extra == "audio"
+Requires-Dist: mir-eval>=0.7; extra == "audio"
+Requires-Dist: rotary-embedding-torch>=0.1.5; extra == "audio"
+Requires-Dist: speechbrain>=0.5.12; extra == "audio"
+Requires-Dist: torchaudio; extra == "audio"
+Requires-Dist: tqdm; extra == "audio"
+Requires-Dist: umap-learn; extra == "audio"
+Requires-Dist: bitstring; extra == "audio"
+Requires-Dist: greenlet>=1.1.2; extra == "audio"
+Requires-Dist: inflect; extra == "audio"
+Requires-Dist: jedi>=0.18.1; extra == "audio"
+Requires-Dist: kantts; extra == "audio"
+Requires-Dist: lxml; extra == "audio"
+Requires-Dist: msgpack>=1.0.4; extra == "audio"
+Requires-Dist: parso>=0.8.3; extra == "audio"
+Requires-Dist: pexpect>=4.8.0; extra == "audio"
+Requires-Dist: pickleshare>=0.7.5; extra == "audio"
+Requires-Dist: prompt-toolkit>=3.0.30; extra == "audio"
+Requires-Dist: protobuf; extra == "audio"
+Requires-Dist: ptflops; extra == "audio"
+Requires-Dist: ptyprocess>=0.7.0; extra == "audio"
+Requires-Dist: pygments>=2.12.0; extra == "audio"
+Requires-Dist: pysptk<0.1.19,>=0.1.15; extra == "audio"
+Requires-Dist: pytorch-wavelets; extra == "audio"
+Requires-Dist: PyWavelets>=1.0.0; extra == "audio"
+Requires-Dist: scikit-learn; extra == "audio"
+Requires-Dist: sox; extra == "audio"
+Requires-Dist: traitlets>=5.3.0; extra == "audio"
+Requires-Dist: ttsfrd>=0.1.2; extra == "audio"
+Requires-Dist: unidecode; extra == "audio"
+Requires-Dist: wcwidth>=0.2.5; extra == "audio"
+Requires-Dist: funcodec>=0.2.0; extra == "audio"
+Provides-Extra: audio_asr
+Requires-Dist: addict; extra == "audio-asr"
+Requires-Dist: attrs; extra == "audio-asr"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "audio-asr"
+Requires-Dist: einops; extra == "audio-asr"
+Requires-Dist: Pillow; extra == "audio-asr"
+Requires-Dist: python-dateutil>=2.1; extra == "audio-asr"
+Requires-Dist: scipy; extra == "audio-asr"
+Requires-Dist: setuptools==69.5.1; extra == "audio-asr"
+Requires-Dist: simplejson>=3.3.0; extra == "audio-asr"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "audio-asr"
+Requires-Dist: transformers; extra == "audio-asr"
+Requires-Dist: urllib3>=1.26; extra == "audio-asr"
+Requires-Dist: funasr>=1.0.0; extra == "audio-asr"
+Provides-Extra: audio_kws
+Requires-Dist: addict; extra == "audio-kws"
+Requires-Dist: attrs; extra == "audio-kws"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "audio-kws"
+Requires-Dist: einops; extra == "audio-kws"
+Requires-Dist: Pillow; extra == "audio-kws"
+Requires-Dist: python-dateutil>=2.1; extra == "audio-kws"
+Requires-Dist: scipy; extra == "audio-kws"
+Requires-Dist: setuptools==69.5.1; extra == "audio-kws"
+Requires-Dist: simplejson>=3.3.0; extra == "audio-kws"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "audio-kws"
+Requires-Dist: transformers; extra == "audio-kws"
+Requires-Dist: urllib3>=1.26; extra == "audio-kws"
+Requires-Dist: kaldiio; extra == "audio-kws"
+Requires-Dist: kwsbp>=0.0.6; extra == "audio-kws"
+Requires-Dist: matplotlib; extra == "audio-kws"
+Requires-Dist: py-sound-connect>=0.1; extra == "audio-kws"
+Requires-Dist: SoundFile>0.10; extra == "audio-kws"
+Requires-Dist: tensorboardX; extra == "audio-kws"
+Provides-Extra: audio_signal
+Requires-Dist: addict; extra == "audio-signal"
+Requires-Dist: attrs; extra == "audio-signal"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "audio-signal"
+Requires-Dist: einops; extra == "audio-signal"
+Requires-Dist: Pillow; extra == "audio-signal"
+Requires-Dist: python-dateutil>=2.1; extra == "audio-signal"
+Requires-Dist: scipy; extra == "audio-signal"
+Requires-Dist: setuptools==69.5.1; extra == "audio-signal"
+Requires-Dist: simplejson>=3.3.0; extra == "audio-signal"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "audio-signal"
+Requires-Dist: transformers; extra == "audio-signal"
+Requires-Dist: urllib3>=1.26; extra == "audio-signal"
+Requires-Dist: hdbscan; extra == "audio-signal"
+Requires-Dist: hyperpyyaml; extra == "audio-signal"
+Requires-Dist: librosa==0.10.1; extra == "audio-signal"
+Requires-Dist: MinDAEC; extra == "audio-signal"
+Requires-Dist: mir-eval>=0.7; extra == "audio-signal"
+Requires-Dist: rotary-embedding-torch>=0.1.5; extra == "audio-signal"
+Requires-Dist: SoundFile>0.10; extra == "audio-signal"
+Requires-Dist: speechbrain>=0.5.12; extra == "audio-signal"
+Requires-Dist: torchaudio; extra == "audio-signal"
+Requires-Dist: tqdm; extra == "audio-signal"
+Requires-Dist: umap-learn; extra == "audio-signal"
+Provides-Extra: audio_tts
+Requires-Dist: addict; extra == "audio-tts"
+Requires-Dist: attrs; extra == "audio-tts"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "audio-tts"
+Requires-Dist: einops; extra == "audio-tts"
+Requires-Dist: Pillow; extra == "audio-tts"
+Requires-Dist: python-dateutil>=2.1; extra == "audio-tts"
+Requires-Dist: scipy; extra == "audio-tts"
+Requires-Dist: setuptools==69.5.1; extra == "audio-tts"
+Requires-Dist: simplejson>=3.3.0; extra == "audio-tts"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "audio-tts"
+Requires-Dist: transformers; extra == "audio-tts"
+Requires-Dist: urllib3>=1.26; extra == "audio-tts"
+Requires-Dist: bitstring; extra == "audio-tts"
+Requires-Dist: greenlet>=1.1.2; extra == "audio-tts"
+Requires-Dist: inflect; extra == "audio-tts"
+Requires-Dist: jedi>=0.18.1; extra == "audio-tts"
+Requires-Dist: kantts; extra == "audio-tts"
+Requires-Dist: librosa==0.10.1; extra == "audio-tts"
+Requires-Dist: lxml; extra == "audio-tts"
+Requires-Dist: matplotlib; extra == "audio-tts"
+Requires-Dist: msgpack>=1.0.4; extra == "audio-tts"
+Requires-Dist: parso>=0.8.3; extra == "audio-tts"
+Requires-Dist: pexpect>=4.8.0; extra == "audio-tts"
+Requires-Dist: pickleshare>=0.7.5; extra == "audio-tts"
+Requires-Dist: prompt-toolkit>=3.0.30; extra == "audio-tts"
+Requires-Dist: protobuf; extra == "audio-tts"
+Requires-Dist: ptflops; extra == "audio-tts"
+Requires-Dist: ptyprocess>=0.7.0; extra == "audio-tts"
+Requires-Dist: pygments>=2.12.0; extra == "audio-tts"
+Requires-Dist: pysptk<0.1.19,>=0.1.15; extra == "audio-tts"
+Requires-Dist: pytorch-wavelets; extra == "audio-tts"
+Requires-Dist: PyWavelets>=1.0.0; extra == "audio-tts"
+Requires-Dist: scikit-learn; extra == "audio-tts"
+Requires-Dist: sox; extra == "audio-tts"
+Requires-Dist: tensorboardx; extra == "audio-tts"
+Requires-Dist: tqdm; extra == "audio-tts"
+Requires-Dist: traitlets>=5.3.0; extra == "audio-tts"
+Requires-Dist: ttsfrd>=0.1.2; extra == "audio-tts"
+Requires-Dist: unidecode; extra == "audio-tts"
+Requires-Dist: wcwidth>=0.2.5; extra == "audio-tts"
+Provides-Extra: cv
+Requires-Dist: addict; extra == "cv"
+Requires-Dist: attrs; extra == "cv"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "cv"
+Requires-Dist: einops; extra == "cv"
+Requires-Dist: Pillow; extra == "cv"
+Requires-Dist: python-dateutil>=2.1; extra == "cv"
+Requires-Dist: scipy; extra == "cv"
+Requires-Dist: setuptools==69.5.1; extra == "cv"
+Requires-Dist: simplejson>=3.3.0; extra == "cv"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "cv"
+Requires-Dist: transformers; extra == "cv"
+Requires-Dist: urllib3>=1.26; extra == "cv"
+Requires-Dist: accelerate; extra == "cv"
+Requires-Dist: albumentations>=1.0.3; extra == "cv"
+Requires-Dist: av>=9.2.0; extra == "cv"
+Requires-Dist: bmt-clipit>=1.0; extra == "cv"
+Requires-Dist: chumpy; extra == "cv"
+Requires-Dist: clip>=1.0; extra == "cv"
+Requires-Dist: control-ldm; extra == "cv"
+Requires-Dist: ddpm-guided-diffusion; extra == "cv"
+Requires-Dist: diffusers; extra == "cv"
+Requires-Dist: easydict; extra == "cv"
+Requires-Dist: edit-distance; extra == "cv"
+Requires-Dist: face-alignment>=1.3.5; extra == "cv"
+Requires-Dist: fairscale>=0.4.1; extra == "cv"
+Requires-Dist: fastai>=1.0.51; extra == "cv"
+Requires-Dist: ffmpeg>=1.4; extra == "cv"
+Requires-Dist: ffmpeg-python>=0.2.0; extra == "cv"
+Requires-Dist: ftfy; extra == "cv"
+Requires-Dist: fvcore; extra == "cv"
+Requires-Dist: imageio>=2.9.0; extra == "cv"
+Requires-Dist: imageio-ffmpeg>=0.4.2; extra == "cv"
+Requires-Dist: imgaug>=0.4.0; extra == "cv"
+Requires-Dist: kornia>=0.5.0; extra == "cv"
+Requires-Dist: lmdb; extra == "cv"
+Requires-Dist: lpips; extra == "cv"
+Requires-Dist: matplotlib>=3.8.0; extra == "cv"
+Requires-Dist: ml-collections; extra == "cv"
+Requires-Dist: mmcls>=0.21.0; extra == "cv"
+Requires-Dist: mmdet<=2.28.2,>=2.25.0; extra == "cv"
+Requires-Dist: mmdet3d==1.0.0a1; extra == "cv"
+Requires-Dist: mmsegmentation<=0.30.0; extra == "cv"
+Requires-Dist: moviepy==1.0.3; extra == "cv"
+Requires-Dist: nerfacc==0.2.2; extra == "cv"
+Requires-Dist: networkx; extra == "cv"
+Requires-Dist: numba; extra == "cv"
+Requires-Dist: omegaconf; extra == "cv"
+Requires-Dist: onnx; extra == "cv"
+Requires-Dist: onnxruntime>=1.10; extra == "cv"
+Requires-Dist: onnxsim; extra == "cv"
+Requires-Dist: open-clip-torch>=2.7.0; extra == "cv"
+Requires-Dist: opencv-python; extra == "cv"
+Requires-Dist: paint-ldm; extra == "cv"
+Requires-Dist: pandas; extra == "cv"
+Requires-Dist: panopticapi; extra == "cv"
+Requires-Dist: Pillow>=6.2.0; extra == "cv"
+Requires-Dist: plyfile>=0.7.4; extra == "cv"
+Requires-Dist: psutil; extra == "cv"
+Requires-Dist: pyclipper; extra == "cv"
+Requires-Dist: PyMCubes<=0.1.4; extra == "cv"
+Requires-Dist: pytorch-lightning; extra == "cv"
+Requires-Dist: regex; extra == "cv"
+Requires-Dist: scikit-image; extra == "cv"
+Requires-Dist: scikit-learn; extra == "cv"
+Requires-Dist: shapely; extra == "cv"
+Requires-Dist: shotdetect-scenedetect-lgss>=0.0.4; extra == "cv"
+Requires-Dist: smplx; extra == "cv"
+Requires-Dist: tensorflow-estimator>=1.15.1; extra == "cv"
+Requires-Dist: tf-slim; extra == "cv"
+Requires-Dist: thop; extra == "cv"
+Requires-Dist: timm>=0.4.9; extra == "cv"
+Requires-Dist: torch-scatter; extra == "cv"
+Requires-Dist: torchmetrics>=0.6.2; extra == "cv"
+Requires-Dist: torchsummary>=1.5.1; extra == "cv"
+Requires-Dist: torchvision; extra == "cv"
+Requires-Dist: tqdm; extra == "cv"
+Requires-Dist: transformers>=4.26.0; extra == "cv"
+Requires-Dist: trimesh; extra == "cv"
+Requires-Dist: ujson; extra == "cv"
+Requires-Dist: utils; extra == "cv"
+Requires-Dist: videofeatures-clipit>=1.0; extra == "cv"
+Requires-Dist: yacs; extra == "cv"
+Provides-Extra: datasets
+Requires-Dist: addict; extra == "datasets"
+Requires-Dist: attrs; extra == "datasets"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "datasets"
+Requires-Dist: einops; extra == "datasets"
+Requires-Dist: oss2; extra == "datasets"
+Requires-Dist: Pillow; extra == "datasets"
+Requires-Dist: python-dateutil>=2.1; extra == "datasets"
+Requires-Dist: scipy; extra == "datasets"
+Requires-Dist: setuptools==69.5.1; extra == "datasets"
+Requires-Dist: simplejson>=3.3.0; extra == "datasets"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "datasets"
+Requires-Dist: urllib3>=1.26; extra == "datasets"
+Provides-Extra: framework
+Requires-Dist: addict; extra == "framework"
+Requires-Dist: attrs; extra == "framework"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "framework"
+Requires-Dist: einops; extra == "framework"
+Requires-Dist: Pillow; extra == "framework"
+Requires-Dist: python-dateutil>=2.1; extra == "framework"
+Requires-Dist: scipy; extra == "framework"
+Requires-Dist: setuptools==69.5.1; extra == "framework"
+Requires-Dist: simplejson>=3.3.0; extra == "framework"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "framework"
+Requires-Dist: transformers; extra == "framework"
+Requires-Dist: urllib3>=1.26; extra == "framework"
+Provides-Extra: hub
+Requires-Dist: requests>=2.25; extra == "hub"
+Requires-Dist: tqdm>=4.64.0; extra == "hub"
+Requires-Dist: urllib3>=1.26; extra == "hub"
+Provides-Extra: multi-modal
+Requires-Dist: addict; extra == "multi-modal"
+Requires-Dist: attrs; extra == "multi-modal"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "multi-modal"
+Requires-Dist: einops; extra == "multi-modal"
+Requires-Dist: Pillow; extra == "multi-modal"
+Requires-Dist: python-dateutil>=2.1; extra == "multi-modal"
+Requires-Dist: scipy; extra == "multi-modal"
+Requires-Dist: setuptools==69.5.1; extra == "multi-modal"
+Requires-Dist: simplejson>=3.3.0; extra == "multi-modal"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "multi-modal"
+Requires-Dist: transformers; extra == "multi-modal"
+Requires-Dist: urllib3>=1.26; extra == "multi-modal"
+Requires-Dist: accelerate; extra == "multi-modal"
+Requires-Dist: cloudpickle; extra == "multi-modal"
+Requires-Dist: decord>=0.6.0; extra == "multi-modal"
+Requires-Dist: diffusers>=0.25.0; extra == "multi-modal"
+Requires-Dist: fairseq==0.12.2; extra == "multi-modal"
+Requires-Dist: ftfy>=6.0.3; extra == "multi-modal"
+Requires-Dist: librosa==0.10.1; extra == "multi-modal"
+Requires-Dist: opencv-python; extra == "multi-modal"
+Requires-Dist: pycocoevalcap>=1.2; extra == "multi-modal"
+Requires-Dist: pycocotools>=2.0.4; extra == "multi-modal"
+Requires-Dist: pydot; extra == "multi-modal"
+Requires-Dist: pytorch-lightning<=1.7.7; extra == "multi-modal"
+Requires-Dist: rapidfuzz; extra == "multi-modal"
+Requires-Dist: rouge-score<=0.0.4; extra == "multi-modal"
+Requires-Dist: sacrebleu; extra == "multi-modal"
+Requires-Dist: safetensors; extra == "multi-modal"
+Requires-Dist: soundfile; extra == "multi-modal"
+Requires-Dist: taming-transformers-rom1504; extra == "multi-modal"
+Requires-Dist: timm; extra == "multi-modal"
+Requires-Dist: tokenizers; extra == "multi-modal"
+Requires-Dist: torchvision; extra == "multi-modal"
+Requires-Dist: transformers>=4.27.1; extra == "multi-modal"
+Requires-Dist: unicodedata2; extra == "multi-modal"
+Requires-Dist: zhconv; extra == "multi-modal"
+Provides-Extra: nlp
+Requires-Dist: addict; extra == "nlp"
+Requires-Dist: attrs; extra == "nlp"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "nlp"
+Requires-Dist: einops; extra == "nlp"
+Requires-Dist: Pillow; extra == "nlp"
+Requires-Dist: python-dateutil>=2.1; extra == "nlp"
+Requires-Dist: scipy; extra == "nlp"
+Requires-Dist: setuptools==69.5.1; extra == "nlp"
+Requires-Dist: simplejson>=3.3.0; extra == "nlp"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "nlp"
+Requires-Dist: transformers; extra == "nlp"
+Requires-Dist: urllib3>=1.26; extra == "nlp"
+Requires-Dist: boto3; extra == "nlp"
+Requires-Dist: embeddings; extra == "nlp"
+Requires-Dist: filelock; extra == "nlp"
+Requires-Dist: ftfy; extra == "nlp"
+Requires-Dist: jieba>=0.42.1; extra == "nlp"
+Requires-Dist: matplotlib; extra == "nlp"
+Requires-Dist: megatron-util; extra == "nlp"
+Requires-Dist: nltk; extra == "nlp"
+Requires-Dist: pandas; extra == "nlp"
+Requires-Dist: protobuf<3.21.0,>=3.19.0; extra == "nlp"
+Requires-Dist: pythainlp; extra == "nlp"
+Requires-Dist: pyvi; extra == "nlp"
+Requires-Dist: regex; extra == "nlp"
+Requires-Dist: rouge; extra == "nlp"
+Requires-Dist: sacremoses>=0.0.41; extra == "nlp"
+Requires-Dist: scikit-learn; extra == "nlp"
+Requires-Dist: sentencepiece; extra == "nlp"
+Requires-Dist: seqeval; extra == "nlp"
+Requires-Dist: spacy<=3.7.0,>=2.3.5; extra == "nlp"
+Requires-Dist: stanza; extra == "nlp"
+Requires-Dist: subword-nmt>=0.3.8; extra == "nlp"
+Requires-Dist: termcolor; extra == "nlp"
+Requires-Dist: tokenizers; extra == "nlp"
+Requires-Dist: transformers>=4.12.0; extra == "nlp"
+Requires-Dist: zhconv; extra == "nlp"
+Provides-Extra: science
+Requires-Dist: addict; extra == "science"
+Requires-Dist: attrs; extra == "science"
+Requires-Dist: datasets<=3.2.0,>=3.0.0; extra == "science"
+Requires-Dist: einops; extra == "science"
+Requires-Dist: Pillow; extra == "science"
+Requires-Dist: python-dateutil>=2.1; extra == "science"
+Requires-Dist: scipy; extra == "science"
+Requires-Dist: setuptools==69.5.1; extra == "science"
+Requires-Dist: simplejson>=3.3.0; extra == "science"
+Requires-Dist: sortedcontainers>=1.5.9; extra == "science"
+Requires-Dist: transformers; extra == "science"
+Requires-Dist: urllib3>=1.26; extra == "science"
+Requires-Dist: biopython; extra == "science"
+Requires-Dist: iopath; extra == "science"
+Requires-Dist: ipdb; extra == "science"
+Requires-Dist: lmdb; extra == "science"
+Requires-Dist: ml-collections; extra == "science"
+Requires-Dist: tensorboardX; extra == "science"
+Requires-Dist: tokenizers; extra == "science"
+Provides-Extra: server
+Requires-Dist: fastapi; extra == "server"
+Requires-Dist: sse-starlette; extra == "server"
+Requires-Dist: uvicorn; extra == "server"
+
+itest`
+<p align="center">
+    <br>
+    <img src="https://modelscope.oss-cn-beijing.aliyuncs.com/modelscope.gif" width="400"/>
+    <br>
+<p>
+
+<div align="center">
+
+[![PyPI](https://img.shields.io/pypi/v/modelscope)](https://pypi.org/project/modelscope/)
+<!-- [![Documentation Status](https://readthedocs.org/projects/easy-cv/badge/?version=latest)](https://easy-cv.readthedocs.io/en/latest/) -->
+[![license](https://img.shields.io/github/license/modelscope/modelscope.svg)](https://github.com/modelscope/modelscope/blob/master/LICENSE)
+[![open issues](https://isitmaintained.com/badge/open/modelscope/modelscope.svg)](https://github.com/modelscope/modelscope/issues)
+[![GitHub pull-requests](https://img.shields.io/github/issues-pr/modelscope/modelscope.svg)](https://GitHub.com/modelscope/modelscope/pull/)
+[![GitHub latest commit](https://badgen.net/github/last-commit/modelscope/modelscope)](https://GitHub.com/modelscope/modelscope/commit/)
+[![Leaderboard](https://img.shields.io/badge/ModelScope-Check%20Your%20Contribution-orange)](https://opensource.alibaba.com/contribution_leaderboard/details?projectValue=modelscope)
+
+<!-- [![GitHub contributors](https://img.shields.io/github/contributors/modelscope/modelscope.svg)](https://GitHub.com/modelscope/modelscope/graphs/contributors/) -->
+<!-- [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) -->
+[Discord](https://discord.gg/FMupRv4jUR)
+
+<h4 align="center">
+<a href="https://trendshift.io/repositories/4784" target="_blank"><img src="https://trendshift.io/api/badge/repositories/4784" alt="modelscope%2Fmodelscope | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+</h4>
+
+<h4 align="center">
+    <p>
+        <b>English</b> |
+        <a href="https://github.com/modelscope/modelscope/blob/master/README_zh.md">中文</a> |
+        <a href="https://github.com/modelscope/modelscope/blob/master/README_ja.md">日本語</a>
+    <p>
+</h4>
+
+
+</div>
+
+# Introduction
+
+[ModelScope]( https://www.modelscope.cn) is built upon the notion of “Model-as-a-Service” (MaaS). It seeks to bring together most advanced machine learning models from the AI community, and streamlines the process of leveraging AI models in real-world applications. The core ModelScope library open-sourced in this repository provides the interfaces and implementations that allow developers to perform  model inference, training and evaluation.
+
+
+In particular, with rich layers of API-abstraction, the ModelScope library offers unified experience to explore state-of-the-art models spanning across domains such as CV, NLP, Speech, Multi-Modality, and Scientific-computation. Model contributors of different areas can integrate models into the ModelScope ecosystem through the layered-APIs, allowing easy and unified access to their models. Once integrated, model inference, fine-tuning, and evaluations can be done with only a few lines of codes. In the meantime, flexibilities are also provided so that different components in the model applications can be customized wherever necessary.
+
+Apart from harboring implementations of a wide range of different models, ModelScope library also enables the necessary interactions with ModelScope backend services, particularly with the Model-Hub and Dataset-Hub. Such interactions facilitate management of  various entities (models and datasets) to be performed seamlessly under-the-hood, including entity lookup, version control, cache management, and many others.
+
+# Models and Online Accessibility
+
+Hundreds of models are made publicly available on [ModelScope]( https://www.modelscope.cn)  (700+ and counting), covering the latest development in areas such as NLP, CV, Audio, Multi-modality, and AI for Science, etc. Many of these models represent the SOTA in their specific fields, and made their open-sourced debut on ModelScope. Users can visit ModelScope([modelscope.cn](http://www.modelscope.cn)) and experience first-hand how these models perform via online experience, with just a few clicks. Immediate developer-experience is also possible through the ModelScope Notebook, which is backed by ready-to-use CPU/GPU development environment in the cloud - only one click away on [ModelScope](https://www.modelscope.cn).
+
+
+<p align="center">
+    <br>
+    <img src="data/resource/inference.gif" width="1024"/>
+    <br>
+<p>
+
+Some representative examples include:
+
+LLM:
+
+* [Yi-1.5-34B-Chat](https://modelscope.cn/models/01ai/Yi-1.5-34B-Chat/summary)
+
+* [Qwen1.5-110B-Chat](https://modelscope.cn/models/qwen/Qwen1.5-110B-Chat/summary)
+
+* [DeepSeek-V2-Chat](https://modelscope.cn/models/deepseek-ai/DeepSeek-V2-Chat/summary)
+
+* [Ziya2-13B-Chat](https://modelscope.cn/models/Fengshenbang/Ziya2-13B-Chat/summary)
+
+* [Meta-Llama-3-8B-Instruct](https://modelscope.cn/models/LLM-Research/Meta-Llama-3-8B-Instruct/summary)
+
+* [Phi-3-mini-128k-instruct](https://modelscope.cn/models/LLM-Research/Phi-3-mini-128k-instruct/summary)
+
+
+Multi-Modal:
+
+* [Qwen-VL-Chat](https://modelscope.cn/models/qwen/Qwen-VL-Chat/summary)
+
+* [Yi-VL-6B](https://modelscope.cn/models/01ai/Yi-VL-6B/summary)
+
+* [InternVL-Chat-V1-5](https://modelscope.cn/models/AI-ModelScope/InternVL-Chat-V1-5/summary)
+
+* [deepseek-vl-7b-chat](https://modelscope.cn/models/deepseek-ai/deepseek-vl-7b-chat/summary)
+
+* [OpenSoraPlan](https://modelscope.cn/models/AI-ModelScope/Open-Sora-Plan-v1.0.0/summary)
+
+* [OpenSora](https://modelscope.cn/models/luchentech/OpenSora-STDiT-v1-HQ-16x512x512/summary)
+
+* [I2VGen-XL](https://modelscope.cn/models/iic/i2vgen-xl/summary)
+
+CV:
+
+* [DamoFD Face Detection Key Point Model - 0.5G](https://modelscope.cn/models/damo/cv_ddsar_face-detection_iclr23-damofd/summary)
+
+* [BSHM Portrait Matting](https://modelscope.cn/models/damo/cv_unet_image-matting/summary)
+
+* [DCT-Net Portrait Cartoonization - 3D](https://modelscope.cn/models/damo/cv_unet_person-image-cartoon-3d_compound-models/summary)
+
+* [DCT-Net Portrait Cartoonization Model - 3D](https://modelscope.cn/models/damo/face_chain_control_model/summary)
+
+* [DuGuang - Text Recognition - Line Recognition Model - Chinese and English - General Domain](https://modelscope.cn/models/damo/cv_convnextTiny_ocr-recognition-general_damo/summary)
+
+* [DuGuang - Text Recognition - Line Recognition Model - Chinese and English - General Domain](https://modelscope.cn/models/damo/cv_resnet18_ocr-detection-line-level_damo/summary)
+
+* [LaMa Image Inpainting](https://modelscope.cn/models/damo/cv_fft_inpainting_lama/summary)
+
+
+Audio:
+
+* [Paraformer Speech Recognition - Chinese - General - 16k - Offline - Large - Long Audio Version](https://modelscope.cn/models/damo/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch/summary)
+
+* [FSMN Voice Endpoint Detection - Chinese - General - 16k - onnx](https://modelscope.cn/models/damo/speech_fsmn_vad_zh-cn-16k-common-onnx/summary)
+
+* [Monotonic-Aligner Speech Timestamp Prediction - 16k - Offline](https://modelscope.cn/models/damo/speech_timestamp_prediction-v1-16k-offline/summary)
+
+* [CT-Transformer Punctuation - Chinese - General - onnx](https://modelscope.cn/models/damo/punc_ct-transformer_zh-cn-common-vocab272727-onnx/summary)
+
+* [Speech Synthesis - Chinese - Multiple Emotions Domain - 16k - Multiple Speakers](https://modelscope.cn/models/damo/speech_sambert-hifigan_tts_zh-cn_16k/summary)
+
+* [CAM++ Speaker Verification - Chinese - General - 200k-Spkrs](https://modelscope.cn/models/damo/speech_campplus_sv_zh-cn_16k-common/summary)
+
+
+
+AI for Science:
+
+* [uni-fold-monomer](https://modelscope.cn/models/DPTech/uni-fold-monomer/summary)
+
+* [uni-fold-multimer](https://modelscope.cn/models/DPTech/uni-fold-multimer/summary)
+
+**Note:** Most models on ModelScope are public and can be downloaded without account registration on modelscope website([www.modelscope.cn](www.modelscope.cn)), please refer to instructions for [model download](https://modelscope.cn/docs/%E6%A8%A1%E5%9E%8B%E7%9A%84%E4%B8%8B%E8%BD%BD), for dowloading models with api provided by modelscope library or git.
+
+# QuickTour
+
+We provide unified interface for inference using `pipeline`, fine-tuning and evaluation using `Trainer` for different tasks.
+
+For any given task with any type of input (image, text, audio, video...), inference pipeline can be implemented with only a few lines of code, which will automatically load the underlying model to get inference result, as is exemplified below:
+
+```python
+>>> from modelscope.pipelines import pipeline
+>>> word_segmentation = pipeline('word-segmentation',model='damo/nlp_structbert_word-segmentation_chinese-base')
+>>> word_segmentation('今天天气不错，适合出去游玩')
+{'output': '今天 天气 不错 ， 适合 出去 游玩'}
+```
+
+Given an image, portrait matting (aka. background-removal) can be accomplished with the following code snippet:
+
+![image](data/resource/portrait_input.png)
+
+```python
+>>> import cv2
+>>> from modelscope.pipelines import pipeline
+
+>>> portrait_matting = pipeline('portrait-matting')
+>>> result = portrait_matting('https://modelscope.oss-cn-beijing.aliyuncs.com/test/images/image_matting.png')
+>>> cv2.imwrite('result.png', result['output_img'])
+```
+
+The output image with the background removed is:
+![image](data/resource/portrait_output.png)
+
+
+Fine-tuning and evaluation can also be done with a few more lines of code to set up training dataset and trainer, with the heavy-lifting work of training and evaluation a model encapsulated in the implementation of  `traner.train()` and
+`trainer.evaluate()`  interfaces.
+
+For example, the gpt3 base model (1.3B) can be fine-tuned with the chinese-poetry dataset, resulting in a model that can be used for chinese-poetry generation.
+
+```python
+>>> from modelscope.metainfo import Trainers
+>>> from modelscope.msdatasets import MsDataset
+>>> from modelscope.trainers import build_trainer
+
+>>> train_dataset = MsDataset.load('chinese-poetry-collection', split='train'). remap_columns({'text1': 'src_txt'})
+>>> eval_dataset = MsDataset.load('chinese-poetry-collection', split='test').remap_columns({'text1': 'src_txt'})
+>>> max_epochs = 10
+>>> tmp_dir = './gpt3_poetry'
+
+>>> kwargs = dict(
+     model='damo/nlp_gpt3_text-generation_1.3B',
+     train_dataset=train_dataset,
+     eval_dataset=eval_dataset,
+     max_epochs=max_epochs,
+     work_dir=tmp_dir)
+
+>>> trainer = build_trainer(name=Trainers.gpt3_trainer, default_args=kwargs)
+>>> trainer.train()
+```
+
+# Why should I use ModelScope library
+
+1. A unified and concise user interface is abstracted for different tasks and different models. Model inferences and training can be implemented by as few as 3 and 10 lines of code, respectively. It is convenient for users to explore models in different fields in the ModelScope community. All models integrated into ModelScope are ready to use, which makes it easy to get started with AI, in both educational and industrial settings.
+
+2. ModelScope offers a model-centric development and application experience. It streamlines the support for model training, inference, export and deployment, and facilitates users to build their own MLOps based on the ModelScope ecosystem.
+
+3. For the model inference and training process, a modular design is put in place, and a wealth of functional module implementations are provided, which is convenient for users to customize their own model inference, training and other processes.
+
+4. For distributed model training, especially for large models, it provides rich training strategy support, including data parallel, model parallel, hybrid parallel and so on.
+
+# Installation
+
+## Docker
+
+ModelScope Library currently supports popular deep learning framework for model training and inference, including PyTorch, TensorFlow and ONNX. All releases are tested and run on Python 3.7+, Pytorch 1.8+, Tensorflow1.15 or Tensorflow2.0+.
+
+To allow out-of-box usage for all the models on ModelScope, official docker images are provided for all releases. Based on the docker image, developers can skip all environment installation and configuration and use it directly. Currently, the latest version of the CPU image and GPU image can be obtained from:
+
+CPU docker image
+```shell
+# py37
+registry.cn-hangzhou.aliyuncs.com/modelscope-repo/modelscope:ubuntu20.04-py37-torch1.11.0-tf1.15.5-1.6.1
+
+# py38
+registry.cn-hangzhou.aliyuncs.com/modelscope-repo/modelscope:ubuntu20.04-py38-torch2.0.1-tf2.13.0-1.9.5
+```
+
+GPU docker image
+```shell
+# py37
+registry.cn-hangzhou.aliyuncs.com/modelscope-repo/modelscope:ubuntu20.04-cuda11.3.0-py37-torch1.11.0-tf1.15.5-1.6.1
+
+# py38
+registry.cn-hangzhou.aliyuncs.com/modelscope-repo/modelscope:ubuntu20.04-cuda11.8.0-py38-torch2.0.1-tf2.13.0-1.9.5
+```
+
+## Setup Local Python Environment
+
+One can also set up local ModelScope environment using pip and conda.  ModelScope supports python3.7 and above.
+We suggest [anaconda](https://docs.anaconda.com/anaconda/install/) for creating local python environment:
+
+```shell
+conda create -n modelscope python=3.8
+conda activate modelscope
+```
+
+PyTorch or TensorFlow can be installed separately according to each model's requirements.
+* Install pytorch [doc](https://pytorch.org/get-started/locally/)
+* Install tensorflow [doc](https://www.tensorflow.org/install/pip)
+
+After installing the necessary machine-learning framework, you can install modelscope library as follows:
+
+If you only want to play around with the modelscope framework, of trying out model/dataset download, you can install the core modelscope components:
+```shell
+pip install modelscope
+```
+
+If you want to use multi-modal models:
+```shell
+pip install modelscope[multi-modal]
+```
+
+If you want to use nlp models:
+```shell
+pip install modelscope[nlp] -f https://modelscope.oss-cn-beijing.aliyuncs.com/releases/repo.html
+```
+
+If you want to use cv models:
+```shell
+pip install modelscope[cv] -f https://modelscope.oss-cn-beijing.aliyuncs.com/releases/repo.html
+```
+
+If you want to use audio models:
+```shell
+pip install modelscope[audio] -f https://modelscope.oss-cn-beijing.aliyuncs.com/releases/repo.html
+```
+
+If you want to use science models:
+```shell
+pip install modelscope[science] -f https://modelscope.oss-cn-beijing.aliyuncs.com/releases/repo.html
+```
+
+`Notes`:
+1. Currently, some audio-task models only support python3.7, tensorflow1.15.4 Linux environments. Most other models can be installed and used on Windows and Mac (x86).
+
+2. Some models in the audio field use the third-party library SoundFile for wav file processing. On the Linux system, users need to manually install libsndfile of SoundFile([doc link](https://github.com/bastibe/python-soundfile#installation)). On Windows and MacOS, it will be installed automatically without user operation. For example, on Ubuntu, you can use following commands:
+    ```shell
+    sudo apt-get update
+    sudo apt-get install libsndfile1
+    ```
+
+3. Some models in computer vision need mmcv-full, you can refer to mmcv [installation guide](https://github.com/open-mmlab/mmcv#installation), a minimal installation is as follows:
+
+    ```shell
+    pip uninstall mmcv # if you have installed mmcv, uninstall it
+    pip install -U openmim
+    mim install mmcv-full
+    ```
+
+
+
+# Learn More
+
+We  provide additional documentations including:
+* [More detailed Installation Guide](https://modelscope.cn/docs/%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85)
+* [Introduction to tasks](https://modelscope.cn/docs/%E4%BB%BB%E5%8A%A1%E7%9A%84%E4%BB%8B%E7%BB%8D)
+* [Use pipeline for model inference](https://modelscope.cn/docs/%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%8E%A8%E7%90%86Pipeline)
+* [Finetuning example](https://modelscope.cn/docs/%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%AE%AD%E7%BB%83Train)
+* [Preprocessing of data](https://modelscope.cn/docs/%E6%95%B0%E6%8D%AE%E7%9A%84%E9%A2%84%E5%A4%84%E7%90%86)
+* [Evaluation](https://modelscope.cn/docs/%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%AF%84%E4%BC%B0)
+* [Contribute your own model to ModelScope](https://modelscope.cn/docs/ModelScope%E6%A8%A1%E5%9E%8B%E6%8E%A5%E5%85%A5%E6%B5%81%E7%A8%8B%E6%A6%82%E8%A7%88)
+
+# License
+
+This project is licensed under the [Apache License (Version 2.0)](https://github.com/modelscope/modelscope/blob/master/LICENSE).
+
+# Citation
+```
+@Misc{modelscope,
+  title = {ModelScope: bring the notion of Model-as-a-Service to life.},
+  author = {The ModelScope Team},
+  howpublished = {\url{https://github.com/modelscope/modelscope}},
+  year = {2023}
+}
+```

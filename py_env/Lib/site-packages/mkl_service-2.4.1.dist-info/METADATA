@@ -1,0 +1,63 @@
+Metadata-Version: 2.1
+Name: mkl-service
+Version: 2.4.1
+Summary: MKL Support Functions
+Home-page: https://github.com/IntelPython/mkl-service
+Download-URL: https://github.com/IntelPython/mkl-service
+Author: Intel
+Maintainer: Intel
+Maintainer-email: scripting@intel.com
+License: BSD
+Platform: Windows
+Platform: Linux
+Platform: Mac OS-X
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Science/Research
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved
+Classifier: Programming Language :: C
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Topic :: Software Development
+Classifier: Topic :: Utilities
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Unix
+Classifier: Operating System :: MacOS
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+Requires-Dist: mkl
+
+# ``mkl-service`` - Python package for run-time control of Intel(R) Math Kernel Library.
+[![Build Status](https://travis-ci.com/IntelPython/mkl-service.svg?branch=master)](https://travis-ci.com/IntelPython/mkl-service)
+
+See the [blog](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html) announcing the release.
+
+---
+
+To install conda package, use `conda install -c intel mkl-service`, or `conda install -c conda-forge mkl-service`.
+
+To install pypi package, use `python -m pip install mkl-service`.
+
+---
+
+Intel(R) Math Kernel Library support functions are subdivided into the following groups according to their purpose:
+ - Version Information
+ - Threading Control
+ - Timing
+ - Memory Management
+ - Conditional Numerical Reproducibility Control
+ - Miscellaneous
+
+A short example, illustrating it use:
+
+```python
+import tomopy
+import mkl
+mkl.domain_set_num_threads(1, domain='fft') # Intel(R) MKL FFT functions to run sequentially
+```

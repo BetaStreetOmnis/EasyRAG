@@ -1,0 +1,2 @@
+[console_scripts]
+easyocr = easyocr.cli:main

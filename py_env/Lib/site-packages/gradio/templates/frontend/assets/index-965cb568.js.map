@@ -1,0 +1,1 @@
+{"version":3,"file":"index-965cb568.js","sources":["../../../../js/app/src/components/Form/index.ts"],"sourcesContent":["export { default as Component } from \"@gradio/form\";\nexport const modes = [\"static\"];\n"],"names":["modes"],"mappings":"yEACa,MAAAA,EAAQ,CAAC,QAAQ"}

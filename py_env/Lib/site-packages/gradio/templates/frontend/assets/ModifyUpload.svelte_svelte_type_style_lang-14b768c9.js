@@ -1,0 +1,2 @@
+function l(e,a,n){if(e==null)return null;if(typeof e=="string")return{name:"file_data",data:e};if(Array.isArray(e)){const s=[];for(const t of e)t===null?s.push(null):s.push(l(t,a,n));return s}else e.is_file?n==null?e.data=a+"/file="+e.name:e.data="/proxy="+n+"file="+e.name:e.is_stream&&(n==null?e.data=a+"/stream/"+e.name:e.data="/proxy="+n+"stream/"+e.name);return e}const r=e=>{const a=new FileReader;return a.readAsDataURL(e),new Promise(n=>{a.onloadend=()=>{n(a.result)}})};export{r as b,l as n};
+//# sourceMappingURL=ModifyUpload.svelte_svelte_type_style_lang-14b768c9.js.map

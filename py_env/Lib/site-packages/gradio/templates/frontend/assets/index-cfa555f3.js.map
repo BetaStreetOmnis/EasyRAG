@@ -1,0 +1,1 @@
+{"version":3,"file":"index-cfa555f3.js","sources":["../../../../js/app/src/components/Tabs/index.ts"],"sourcesContent":["export { default as Component } from \"@gradio/tabs\";\nexport const modes = [\"static\"];\n"],"names":["modes"],"mappings":"yEACa,MAAAA,EAAQ,CAAC,QAAQ"}

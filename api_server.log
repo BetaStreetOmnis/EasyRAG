@@ -1,0 +1,6 @@
+系统默认编码: UTF-8
+Python默认编码: utf-8
+Traceback (most recent call last):
+  File "/data/easyRAG/api_server.py", line 28, in <module>
+    from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request, BackgroundTasks
+ModuleNotFoundError: No module named 'fastapi'

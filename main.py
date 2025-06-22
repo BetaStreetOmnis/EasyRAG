@@ -2,6 +2,7 @@ import os
 import numpy as np
 import logging
 from typing import List, Dict, Any, Tuple, Optional
+import json
 
 # 导入自定义模块
 from core.faiss_connect import FaissManager, DataLineageTracker
@@ -306,52 +307,116 @@ class RAGService:
         Returns:
             bool: 添加是否成功
         """
-        if not self.vector_db.collection_exists(kb_name):
-            logger.error(f"知识库 {kb_name} 不存在")
-            if progress_callback:
-                progress_callback(100, f"添加失败：知识库 {kb_name} 不存在")
-            return False
-            
         try:
+            # 检查知识库是否存在
+            if not self.vector_db.collection_exists(kb_name):
+                error_msg = f"知识库 {kb_name} 不存在"
+                logger.error(error_msg)
+                print(f"ERROR: {error_msg}")
+                if progress_callback:
+                    progress_callback(100, f"添加失败：{error_msg}")
+                return False
+            
+            # 检查文档列表是否为空
+            if not documents:
+                error_msg = f"文档列表为空，无法添加到知识库 {kb_name}"
+                logger.error(error_msg)
+                print(f"ERROR: {error_msg}")
+                if progress_callback:
+                    progress_callback(100, f"添加失败：{error_msg}")
+                return False
+            
             if progress_callback:
                 progress_callback(0, f"开始向知识库 {kb_name} 添加 {len(documents)} 个文档")
             
+            print(f"开始处理 {len(documents)} 个文档，准备添加到知识库 {kb_name}")
+            
             # 提取文本并生成向量
             texts = [doc.get("text", "") for doc in documents]
-            vectors = []
             
+            # 检查是否有空文本
+            empty_texts = [i for i, text in enumerate(texts) if not text.strip()]
+            if empty_texts:
+                print(f"WARNING: 发现 {len(empty_texts)} 个空文本分块: {empty_texts}")
+            
+            vectors = []
             total_texts = len(texts)
             
             if progress_callback:
                 progress_callback(10, f"开始生成 {total_texts} 个文档的向量表示")
                 
+            print(f"开始生成向量，共 {total_texts} 个文本")
+            
             for i, text in enumerate(texts):
-                vector = get_embedding(text)
-                vectors.append(vector)
-                
-                # 每处理10%的文档报告一次进度
-                if progress_callback and i % max(1, total_texts // 10) == 0:
-                    progress_percent = 10 + int((i / total_texts) * 40)  # 10%-50%的进度区间
-                    progress_callback(progress_percent, f"已生成 {i}/{total_texts} 个向量")
+                try:
+                    if not text.strip():
+                        print(f"WARNING: 跳过空文本 (索引 {i})")
+                        # 为空文本创建零向量或跳过
+                        continue
+                        
+                    vector = get_embedding(text)
+                    if vector is None or len(vector) == 0:
+                        print(f"ERROR: 文本 {i} 生成向量失败")
+                        continue
+                        
+                    vectors.append(vector)
+                    
+                    # 每处理10%的文档报告一次进度
+                    if progress_callback and i % max(1, total_texts // 10) == 0:
+                        progress_percent = 10 + int((i / total_texts) * 40)  # 10%-50%的进度区间
+                        progress_callback(progress_percent, f"已生成 {i+1}/{total_texts} 个向量")
+                        
+                except Exception as e:
+                    error_msg = f"生成第 {i} 个文档的向量时出错: {str(e)}"
+                    print(f"ERROR: {error_msg}")
+                    logger.error(error_msg)
+                    continue
+            
+            if not vectors:
+                error_msg = f"没有成功生成任何向量，无法添加到知识库"
+                print(f"ERROR: {error_msg}")
+                logger.error(error_msg)
+                if progress_callback:
+                    progress_callback(100, f"添加失败：{error_msg}")
+                return False
+            
+            print(f"成功生成 {len(vectors)} 个向量")
             
             if progress_callback:
                 progress_callback(50, f"向量生成完成，开始添加到知识库")
                 
             # 添加向量到知识库，启用去重功能
+            print(f"开始调用 vector_db.add_vectors，知识库: {kb_name}")
             result = self.vector_db.add_vectors(kb_name, np.array(vectors), documents, file_path)
             
-            if result.get("status") == "success" and progress_callback:
-                progress_callback(100, f"成功添加文档到知识库 {kb_name}: {result.get('message', '')}")
+            print(f"vector_db.add_vectors 返回结果: {result}")
+            
+            if result.get("status") == "success":
+                success_msg = f"成功添加文档到知识库 {kb_name}: {result.get('message', '')}"
+                print(f"SUCCESS: {success_msg}")
+                if progress_callback:
+                    progress_callback(100, success_msg)
                 return True
-            elif result.get("status") == "error" and progress_callback:
-                progress_callback(100, f"添加文档到知识库 {kb_name} 失败: {result.get('message', '')}")
+            elif result.get("status") == "error":
+                error_msg = f"添加文档到知识库 {kb_name} 失败: {result.get('message', '')}"
+                print(f"ERROR: {error_msg}")
+                logger.error(error_msg)
+                if progress_callback:
+                    progress_callback(100, f"添加失败：{result.get('message', '')}")
                 return False
-            self.vector_db = FaissManager(os.path.join(self.db_path, "faiss_indexes"))
-            # 根据status返回成功或失败
-            return result.get("status") == "success"
+            else:
+                error_msg = f"未知的返回状态: {result}"
+                print(f"ERROR: {error_msg}")
+                logger.error(error_msg)
+                if progress_callback:
+                    progress_callback(100, f"添加失败：{error_msg}")
+                return False
             
         except Exception as e:
-            logger.error(f"向知识库 {kb_name} 添加文档失败: {str(e)}")
+            error_msg = f"向知识库 {kb_name} 添加文档失败: {str(e)}"
+            print(f"EXCEPTION: {error_msg}")
+            logger.error(error_msg)
+            logger.exception(e)
             if progress_callback:
                 progress_callback(100, f"添加失败：{str(e)}")
             return False
@@ -805,26 +870,26 @@ class RAGService:
     def chat_with_kb(self, kb_name: str, query: str, history: List[Dict[str, str]] = None,
                            top_k: int = 5, temperature: float = 0.7, use_rerank: bool = True):
         """
-        基于知识库内容进行对话，返回流式响应
+        基于知识库内容进行对话，返回结构化的流式响应
         
         参数:
             kb_name: 知识库名称
             query: 用户当前的查询内容
-            history: 对话历史记录，格式为[{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]
+            history: 对话历史记录
             top_k: 知识库检索的结果数量
             temperature: 生成时的温度参数，控制输出的随机性
             use_rerank: 是否使用重排序
             
         返回:
-            生成的文本流
+            JSON字符串的生成器，每个JSON对象包含 type 和 data 字段
         """
         try:
             # 检查知识库是否存在
             if not self.kb_exists(kb_name):
-                yield f"错误：知识库 {kb_name} 不存在。"
+                yield json.dumps({"type": "error", "data": f"知识库 {kb_name} 不存在。"}) + "\n"
                 return
             
-            # 从知识库中检索相关内容
+            # 1. 检索内容
             search_results = self.search(
                 kb_name=kb_name,
                 query=query,
@@ -833,80 +898,60 @@ class RAGService:
                 remove_duplicates=True
             )
             
+            # 2. 将检索结果作为上下文发送给前端
+            if search_results:
+                yield json.dumps({"type": "context", "data": search_results}) + "\n"
+            
             if not search_results:
                 logger.warning(f"在知识库 {kb_name} 中未找到与查询 '{query}' 相关的内容")
-                yield "很抱歉，我在知识库中没有找到与您问题相关的信息。请尝试用不同的方式提问，或者询问其他内容。"
+                yield json.dumps({"type": "answer", "data": "很抱歉，我在知识库中没有找到与您问题相关的信息。请尝试用不同的方式提问，或者询问其他内容。"}) + "\n"
                 return
             
-            # 整理检索到的内容，准备提供给语言模型
-            context_texts = []
-            for i, result in enumerate(search_results):
-                content = result.get("content", "")
-                if content:
-                    # 格式化检索结果，包含相关性分数
-                    context_text = f"[{i+1}] {content} (相关度: {result.get('score', 0.0)})"
-                    context_texts.append(context_text)
-            
-            context = "\n\n".join(context_texts)
+            # 3. 整理上下文并生成回答
+            context_texts = [res.get("content", "") for res in search_results if res.get("content")]
             
             try:
-                # 导入DeepSeekLLM模型
                 from core.llm.local_llm_model import get_llm_model
                 model = get_llm_model()
                 
-                # 准备对话历史（转换为local_llm_model格式）
+                # 准备历史记录
                 formatted_history = []
                 if history:
-                    # API传入的历史格式为[{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]
-                    # 需要转换为DeepSeekLLM需要的格式：[[user_msg, assistant_msg], ...]
                     i = 0
                     while i < len(history) - 1:
-                        user_msg = None
-                        assistant_msg = None
-                        
-                        # 找到一对用户和助手消息
                         if history[i]["role"] == "user" and history[i+1]["role"] == "assistant":
-                            user_msg = history[i]["content"]
-                            assistant_msg = history[i+1]["content"]
-                            formatted_history.append([user_msg, assistant_msg])
+                            formatted_history.append([history[i]["content"], history[i+1]["content"]])
                             i += 2
                         else:
-                            # 如果格式不匹配，尝试向前移动一位
                             i += 1
                 
-                logger.info(f"对话历史记录已转换，共 {len(formatted_history)} 轮对话")
-                
-                # 流式生成回答
-                logger.info(f"开始使用流式生成回答查询: {query}")
+                # 4. 流式生成并发送模型回答
                 for chunk in model.generate_stream(
                     query=query,
                     context=context_texts,
                     history=formatted_history,
                     temperature=temperature
                 ):
-                    yield chunk
+                    yield json.dumps({"type": "answer", "data": chunk}) + "\n"
                 
             except ImportError as e:
                 logger.error(f"未能导入LLM模型: {str(e)}")
-                # 返回一个基于检索结果的简单回答
-                yield f"以下是与您问题相关的内容：\n\n{context}\n\n注：系统未能加载语言模型，仅返回知识库检索结果。"
+                yield json.dumps({"type": "error", "data": "系统未能加载语言模型，无法生成回答。"}) + "\n"
                 
             except Exception as e:
                 logger.error(f"生成回答时出错: {str(e)}")
-                logger.exception(e)
-                yield f"处理您的问题时发生错误: {str(e)}\n\n以下是相关的检索结果：\n\n{context}"
+                yield json.dumps({"type": "error", "data": f"生成回答时出错: {str(e)}"}) + "\n"
                 
         except Exception as e:
             logger.error(f"与知识库对话失败: {str(e)}")
-            logger.exception(e)
-            yield f"处理您的问题时发生错误: {str(e)}"
-            
+            yield json.dumps({"type": "error", "data": f"处理您的问题时发生错误: {str(e)}"}) + "\n"
+
     def chat_with_kb_sync(self, kb_name: str, query: str, history: List[Dict[str, str]] = None,
                            top_k: int = 5, temperature: float = 0.7, use_rerank: bool = True):
         """
         基于知识库内容进行对话，返回完整响应（非流式）
         
-        参数:
+        Args:
             kb_name: 知识库名称
             query: 用户当前的查询内容
             history: 对话历史记录，格式为[{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]
@@ -914,7 +959,7 @@ class RAGService:
             temperature: 生成时的温度参数，控制输出的随机性
             use_rerank: 是否使用重排序
             
-        返回:
+        Returns:
             生成的完整文本
         """
         try:
@@ -1000,16 +1045,28 @@ class RAGService:
             logger.exception(e)
             return f"处理您的问题时发生错误: {str(e)}"
 
+    def fix_dimension_mismatch(self, kb_name: str) -> Dict[str, Any]:
+        """
+        修复知识库的维度不匹配问题
+        
+        Args:
+            kb_name: 知识库名称
+            
+        Returns:
+            Dict: 修复结果
+        """
+        return self.vector_db.fix_dimension_mismatch(kb_name, correct_dimension=512)
 
-if __name__ == "__main__":
-    # 文档上传
-    DocumentProcessor.add_file("test1", "test1.txt")
 
-    # 文档处理
+# if __name__ == "__main__":
+#     # 文档上传
+#     DocumentProcessor.add_file("test1", "test1.txt")
 
-    # 文档搜索
+#     # 文档处理
 
-    # 文档管理
+#     # 文档搜索
+
+#     # 文档管理
 
     
     

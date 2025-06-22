@@ -1,6 +1,36 @@
 {
-  "_created_at": "2025-03-31T18:40:18.712960",
-  "_last_updated": "2025-04-06T19:13:50.058497",
-  "_file_count": 0,
-  "_vector_count": 0
+  "_last_updated": "2025-06-19T09:29:04.216857",
+  "_file_count": 1,
+  "_vector_count": 14,
+  "40426224-5026-42e3-9ed6-5fea9ac01472_(完整版)投标文件范本(格式).docx": {
+    "file_name": "40426224-5026-42e3-9ed6-5fea9ac01472_(完整版)投标文件范本(格式).docx",
+    "file_path": "d:\\code\\EasyRAG\\temp_files\\40426224-5026-42e3-9ed6-5fea9ac01472_(完整版)投标文件范本(格式).docx",
+    "added_at": "2025-06-19T09:29:04.138482",
+    "vector_count": 14,
+    "last_updated": "2025-06-19T09:29:04.138482",
+    "versions": [
+      {
+        "version": 1,
+        "vector_count": 14,
+        "vector_ids": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "created_at": "2025-06-19T09:29:04.138482"
+      }
+    ],
+    "current_version": 1
+  }
 }

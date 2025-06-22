@@ -1,0 +1,24 @@
+Metadata-Version: 2.1
+Name: tbb
+Version: 2022.0.0
+Summary: Intel® oneAPI Threading Building Blocks
+Home-page: https://www.intel.com/content/www/us/en/developer/tools/oneapi/onetbb.html
+Author: Intel Corporation
+Author-email: scripting@intel.com
+License: Intel Simplified Software License
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: System Administrators
+Classifier: Intended Audience :: Other Audience
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Software Development :: Libraries
+Classifier: License :: Other/Proprietary License
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+Requires-Dist: tcmlib ==1.*
+
+Intel® oneAPI Threading Building Blocks (oneTBB) x86_64 dynamic libraries for Windows*. Intel® oneAPI Threading Building Blocks (oneTBB) is a flexible performance library that supports scalable parallel programming using C++ code compliant with ISO C++ standard.
+

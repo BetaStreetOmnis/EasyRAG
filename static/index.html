@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="api-base-url" content="{{API_BASE_URL}}">
+    <title>FluidGen AI - 知识库管理系统</title>
+    <!-- <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"> -->
+    <link href="boxicons.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="#" class="logo">
+                    <i class='bx bx-brain'></i>
+                    <h2>Fluidgen-AI</h2>
+                </a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#kb-management" class="active">
+                        <i class='bx bx-data'></i>
+                        <span>知识库管理</span>
+                    </a></li>
+                    <li><a href="#file-management">
+                        <i class='bx bx-file'></i>
+                        <span>文件管理</span>
+                    </a></li>
+                    <li><a href="#kb-search">
+                        <i class='bx bx-search-alt'></i>
+                        <span>知识库检索</span>
+                    </a></li>
+                    <li style="display: none;"><a href="#kb-chat">
+                        <i class='bx bx-message-rounded-dots'></i>
+                        <span>知识库对话</span>
+                    </a></li>
+                    <li><a href="#app-management">
+                        <i class='bx bx-grid-alt'></i>
+                        <span>应用管理</span>
+                    </a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <header>
+                <div class="header-left">
+                    <h1>Fluidgen-AI 知识库管理系统</h1>
+                    <p>基于向量数据库的智能检索与对话平台</p>
+                </div>
+                <div class="header-right">
+                    <button class="theme-toggle" id="theme-toggle">
+                        <i class='bx bx-sun'></i>
+                    </button>
+                </div>
+            </header>
+
+            <main>
+                <!-- 知识库管理 -->
+                <section id="kb-management" class="content-section active">
+                    <div class="section-header">
+                        <h2><i class='bx bx-data'></i> 知识库管理</h2>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class='bx bx-plus-circle'></i> 创建新知识库</h3>
+                        <form id="create-kb-form">
+                            <div class="form-group">
+                                <label for="kb-name">知识库名称</label>
+                                <input type="text" id="kb-name" name="kb_name" placeholder="输入知识库名称，例如：company_docs" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="dimension">向量维度</label>
+                                <select id="dimension" name="dimension">
+                                    <option value="512">512 (默认)</option>
+                                    <option value="768">768</option>
+                                    <option value="1024">1024</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="index-type">索引类型</label>
+                                <select id="index-type" name="index_type">
+                                    <option value="Flat">Flat (精确检索)</option>
+                                    <option value="IVF">IVF (快速检索)</option>
+                                    <option value="HNSW">HNSW (高效检索)</option>
+                                </select>
+                            </div>
+                            <button type="submit"><i class='bx bx-plus'></i> 创建知识库</button>
+                        </form>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class='bx bx-list-ul'></i> 知识库列表</h3>
+                        <div class="kb-list-actions">
+                            <button id="refresh-kb-list"><i class='bx bx-refresh'></i> 刷新列表</button>
+                            <div class="form-group">
+                                <label for="delete-kb-select">选择知识库：</label>
+                                <select id="delete-kb-select"></select>
+                                <button id="delete-kb-btn" class="danger"><i class='bx bx-trash'></i> 删除</button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="kb-list-table">
+                                <thead>
+                                    <tr>
+                                        <th>知识库名称</th>
+                                        <th>向量维度</th>
+                                        <th>索引类型</th>
+                                        <th>文档数量</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- 列表将由JS动态填充 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 文件管理 -->
+                <section id="file-management" class="content-section">
+                    <div class="section-header">
+                        <h2><i class='bx bx-file'></i> 文件管理</h2>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class='bx bx-upload'></i> 上传文件</h3>
+                        <form id="upload-file-form">
+                            <div class="form-group">
+                                <label for="upload-kb-select">选择知识库</label>
+                                <select id="upload-kb-select" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="files-to-upload">选择文件</label>
+                                <input type="file" id="files-to-upload" multiple required>
+                                <p class="text-sm text-light-color mt-4">支持的文件格式：PDF, DOCX, TXT, MD等</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="chunk-method">分块方法</label>
+                                <select id="chunk-method">
+                                    <option value="text_semantic">文本语义分块 (推荐)</option>
+                                    <option value="semantic">语义分块</option>
+                                    <option value="bm25">BM25分块</option>
+                                    <option value="recursive_character">递归字符分块</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <div class="flex items-center justify-between">
+                                    <label for="chunk-size">分块大小</label>
+                                    <span class="text-sm" id="chunk-size-value">1000</span>
+                                </div>
+                                <input type="range" id="chunk-size" min="200" max="2000" step="100" value="1000">
+                            </div>
+                            <button type="submit"><i class='bx bx-upload'></i> 上传文件</button>
+                        </form>
+                        <div id="upload-progress-container" class="progress-container" style="display: none;">
+                            <div id="upload-progress-bar" class="progress-bar"></div>
+                        </div>
+                        <div id="upload-status" class="upload-status"></div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class='bx bx-file'></i> 知识库文件列表</h3>
+                        <div class="form-group">
+                            <label for="file-kb-select">选择知识库</label>
+                            <select id="file-kb-select"></select>
+                        </div>
+                        <div class="table-container">
+                            <table id="file-list-table">
+                                <thead>
+                                    <tr>
+                                        <th>文件名</th>
+                                        <th>大小</th>
+                                        <th>块数量</th>
+                                        <th>添加时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 知识库检索 -->
+                <section id="kb-search" class="content-section">
+                    <div class="section-header">
+                        <h2><i class='bx bx-search-alt'></i> 知识库检索</h2>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class='bx bx-search-alt'></i> 检索设置</h3>
+                        <form id="search-form">
+                            <div class="form-group">
+                                <label for="search-kb-select">选择知识库</label>
+                                <select id="search-kb-select" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="search-query">输入问题</label>
+                                <textarea id="search-query" rows="3" placeholder="输入您想要检索的内容..." required></textarea>
+                            </div>
+                            <div class="flex gap-4">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="top-k">返回结果数量</label>
+                                    <input type="number" id="top-k" value="3" min="1" max="10">
+                                </div>
+                                <div class="form-group checkbox-group" style="flex: 1;">
+                                    <input type="checkbox" id="use-rerank" checked>
+                                    <label for="use-rerank">使用重排序 (提高相关性)</label>
+                                </div>
+                            </div>
+                            <button type="submit"><i class='bx bx-search'></i> 检索</button>
+                        </form>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class='bx bx-list-check'></i> 检索结果</h3>
+                        <div id="search-results"></div>
+                    </div>
+                </section>
+
+                <!-- 知识库对话 -->
+                <section id="kb-chat" class="content-section">
+                    <div class="section-header">
+                        <h2><i class='bx bx-message-rounded-dots'></i> 知识库对话</h2>
+                        <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
+                            <select id="chat-kb-select" required></select>
+                        </div>
+                    </div>
+                    
+                    <div id="chat-window">
+                        <div id="chat-history"></div>
+                        <div id="chat-input-container">
+                            <textarea id="chat-input" placeholder="输入您的问题..."></textarea>
+                            <button id="chat-send-btn"><i class='bx bx-send'></i></button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between mt-4">
+                        <button class="secondary" id="clear-chat-btn"><i class='bx bx-trash'></i> 清空对话</button>
+                        <div class="flex gap-2 items-center">
+                            <label for="chat-top-k" class="text-sm">检索结果数：</label>
+                            <input type="number" id="chat-top-k" min="1" max="10" value="3" style="width: 60px;">
+                            <label for="temperature" class="text-sm ml-4">生成多样性：</label>
+                            <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7" style="width: 100px;">
+                            <span id="temperature-value" class="text-sm">0.7</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 应用管理 -->
+                <section id="app-management" class="content-section">
+                    <div class="section-header">
+                        <h2><i class='bx bx-grid-alt'></i> 应用管理</h2>
+                        <div class="button-group">
+                            <button id="add-app-btn" class="secondary"><i class='bx bx-plus'></i> 添加应用</button>
+                            <button id="reset-apps-btn" class="secondary"><i class='bx bx-reset'></i> 重置应用</button>
+                        </div>
+                    </div>
+
+                    <div id="add-app-form-container" class="card" style="display: none;">
+                        <h3><i class='bx bx-plus-circle'></i> 添加新应用</h3>
+                        <form id="add-app-form" class="app-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="app-name">应用名称</label>
+                                    <input type="text" id="app-name" placeholder="输入应用名称" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="app-icon">图标 (选择一个Boxicons图标)</label>
+                                    <select id="app-icon">
+                                        <option value="bx-globe">网页图标</option>
+                                        <option value="bx-code-block">代码图标</option>
+                                        <option value="bx-bot">机器人图标</option>
+                                        <option value="bx-chart">图表图标</option>
+                                        <option value="bx-book">书籍图标</option>
+                                        <option value="bx-bulb">灯泡图标</option>
+                                        <option value="bx-link">链接图标</option>
+                                        <option value="bx-rocket">火箭图标</option>
+                                        <option value="bx-server">服务器图标</option>
+                                        <option value="bx-code-alt">代码图标2</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="app-url">应用URL</label>
+                                <input type="url" id="app-url" placeholder="https://example.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="app-description">应用描述</label>
+                                <textarea id="app-description" rows="3" placeholder="简要描述此应用的功能和用途..."></textarea>
+                            </div>
+                            <div class="button-group">
+                                <button type="submit"><i class='bx bx-plus'></i> 添加应用</button>
+                                <button type="button" id="cancel-add-app" class="secondary"><i class='bx bx-x'></i> 取消</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="app-grid" id="app-grid">
+                        <!-- 应用列表将由JS动态填充 -->
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- 通知容器 -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- 先加载配置管理器 -->
+    <script src="js/app_config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 

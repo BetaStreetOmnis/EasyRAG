@@ -30,5 +30,53 @@
     "created_at": "2025-04-13T10:52:17.348871",
     "vectors_count": 0,
     "files_count": 0
+  },
+  "test001": {
+    "name": "test001",
+    "dimension": 512,
+    "index_type": "Flat",
+    "created_at": "2025-06-08T15:51:59.720206",
+    "vectors_count": 0,
+    "files_count": 0
+  },
+  "test212": {
+    "name": "test212",
+    "dimension": 512,
+    "index_type": "Flat",
+    "created_at": "2025-06-18T07:12:18.767303",
+    "vectors_count": 0,
+    "files_count": 0
+  },
+  "演示": {
+    "name": "演示",
+    "dimension": 512,
+    "index_type": "Flat",
+    "created_at": "2025-06-18T07:13:03.823504",
+    "vectors_count": 0,
+    "files_count": 0
+  },
+  "222": {
+    "name": "222",
+    "dimension": 512,
+    "index_type": "Flat",
+    "created_at": "2025-06-18T07:18:23.695956",
+    "vectors_count": 0,
+    "files_count": 0
+  },
+  "show": {
+    "name": "show",
+    "dimension": 512,
+    "index_type": "Flat",
+    "created_at": "2025-06-18T07:19:17.131665",
+    "vectors_count": 0,
+    "files_count": 0
+  },
+  "test": {
+    "name": "test",
+    "dimension": 512,
+    "index_type": "Flat",
+    "created_at": "2025-06-18T21:22:57.880000",
+    "vectors_count": 0,
+    "files_count": 0
   }
 }

@@ -142,13 +142,13 @@ class FaissManager:
         """
         return os.path.join(self.index_folder, "collections_info.json")
     
-    def create_collection(self, collection_name: str, dimension: int = 1536, index_type: str = "Flat") -> bool:
+    def create_collection(self, collection_name: str, dimension: int = 512, index_type: str = "Flat") -> bool:
         """
         创建新的向量集合
         
         Args:
             collection_name: 集合名称
-            dimension: 向量维度，默认1536（适用于多种嵌入模型）
+            dimension: 向量维度，默认512（匹配中文嵌入模型输出）
             index_type: 索引类型，支持"Flat"（精确搜索）、"IVF"（倒排索引）、"HNSW"（层次导航小世界图）
             
         Returns:
@@ -726,7 +726,7 @@ class FaissManager:
             
         index = self.indexes[collection_name]
         return {
-            "name": collection_name,
+            "kb_name": collection_name,
             "vector_count": index.ntotal,
             "dimension": index.d,
             "index_type": type(index).__name__,
@@ -747,6 +747,28 @@ class FaissManager:
             Dict: 添加结果信息
         """
         try:
+            # 检查向量维度
+            if len(vectors) > 0:
+                vector_dim = vectors.shape[1] if len(vectors.shape) > 1 else len(vectors[0])
+                logger.info(f"准备添加向量维度: {vector_dim}")
+                
+                # 确保向量是正确的numpy数组格式
+                vectors = np.array(vectors, dtype=np.float32)
+                
+                # 如果集合已存在，检查维度是否匹配
+                if self.collection_exists(collection_name):
+                    if collection_name not in self.indexes:
+                        self._load_index(collection_name)
+                    
+                    if collection_name in self.indexes:
+                        expected_dim = self.indexes[collection_name].d
+                        if expected_dim != vector_dim:
+                            logger.error(f"向量维度不匹配: 索引期望{expected_dim}维，但提供{vector_dim}维")
+                            return {
+                                "status": "error", 
+                                "message": f"向量维度不匹配: 索引期望{expected_dim}维，但提供{vector_dim}维。请删除知识库后重新创建，或确保嵌入模型输出正确的维度。"
+                            }
+            
             # 文件路径检查和处理
             original_file_path = file_path  # 保存原始路径用于日志
             if file_path is None or file_path.strip() == "":
@@ -2900,6 +2922,78 @@ class FaissManager:
             logger.error(f"检查集合 {collection_name} 一致性时出错: {str(e)}")
             logger.error(traceback.format_exc())
             return False
+
+    def fix_dimension_mismatch(self, collection_name: str, correct_dimension: int = 512) -> Dict[str, Any]:
+        """
+        修复知识库的维度不匹配问题
+        
+        Args:
+            collection_name: 集合名称
+            correct_dimension: 正确的向量维度，默认512
+            
+        Returns:
+            Dict: 修复结果
+        """
+        try:
+            if not self.collection_exists(collection_name):
+                return {"status": "error", "message": f"知识库 {collection_name} 不存在"}
+            
+            # 加载当前索引
+            if collection_name not in self.indexes:
+                self._load_index(collection_name)
+            
+            current_index = self.indexes[collection_name]
+            current_dim = current_index.d
+            
+            if current_dim == correct_dimension:
+                return {"status": "success", "message": f"知识库 {collection_name} 的维度已经正确 ({current_dim}维)"}
+            
+            logger.info(f"开始修复知识库 {collection_name} 的维度不匹配问题: {current_dim}维 -> {correct_dimension}维")
+            
+            # 备份当前数据
+            backup_info = {
+                "collection_name": collection_name,
+                "old_dimension": current_dim,
+                "new_dimension": correct_dimension,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # 如果索引中有数据，警告用户数据将丢失
+            if current_index.ntotal > 0:
+                logger.warning(f"知识库 {collection_name} 包含 {current_index.ntotal} 个向量，修复维度将清空所有数据")
+                
+                # 保存文件列表以便重新处理
+                file_list = self.list_files(collection_name)
+                backup_info["files_to_reprocess"] = [f.get("file_name", "") for f in file_list if f.get("file_name")]
+            
+            # 删除旧的知识库
+            delete_success = self.delete_collection(collection_name)
+            if not delete_success:
+                return {"status": "error", "message": "删除旧知识库失败"}
+            
+            # 创建新的知识库（使用正确的维度）
+            create_success = self.create_collection(collection_name, correct_dimension, "Flat")
+            if not create_success:
+                return {"status": "error", "message": "创建新知识库失败"}
+            
+            logger.info(f"成功修复知识库 {collection_name} 的维度问题")
+            
+            result = {
+                "status": "success", 
+                "message": f"成功修复知识库 {collection_name} 的维度问题 ({current_dim}维 -> {correct_dimension}维)",
+                "backup_info": backup_info
+            }
+            
+            if backup_info.get("files_to_reprocess"):
+                result["message"] += f"，需要重新上传 {len(backup_info['files_to_reprocess'])} 个文件"
+                result["files_to_reprocess"] = backup_info["files_to_reprocess"]
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"修复维度不匹配问题失败: {str(e)}")
+            logger.exception(e)
+            return {"status": "error", "message": f"修复失败: {str(e)}"}
 
 
 

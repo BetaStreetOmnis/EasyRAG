@@ -6,7 +6,7 @@ import uuid
 import os.path
 import time
 import locale
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 from typing import List, Dict, Any, Optional, Union
 
 
@@ -95,7 +95,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 挂载静态文件目录
+static_dir = os.path.join(current_dir, "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="/static/index.html")
 
 # 初始化RAG服务和文件处理器
 rag_service = None
@@ -321,21 +328,52 @@ async def upload_files(
                         chunk_overlap=chunk_overlap,
                         progress_callback=update_progress
                     )
+                    
+                    # 检查文档处理结果
+                    if not document:
+                        error_msg = f"文档处理失败：{orig_filename} - 无法提取文档内容"
+                        print(error_msg)
+                        failed_files.append(f"{orig_filename} (文档处理失败)")
+                        continue
+                    
+                    print(f"文档处理成功，共生成 {len(document)} 个分块")
+                    
                     # 使用RAGService添加文档到知识库
                     processing_tasks[task_id]["message"] = f"添加文件 {orig_filename} 到知识库..."
-                    success = rag_service.add_documents(
-                        kb_name=kb_name,
-                        documents=document
-                    )
+                    print(f"开始添加文档到知识库: {orig_filename}")
                     
-                    if success:
-                        print(f"文件 {orig_filename} 处理并添加成功")
-                        total_docs += 1  # 增加成功处理的文档计数
-                    else:
-                        print(f"文件 {orig_filename} 添加到知识库失败")
-                        failed_files.append(f"{orig_filename} (添加到知识库失败)")
+                    try:
+                        success = rag_service.add_documents(
+                            kb_name=kb_name,
+                            documents=document
+                        )
+                        
+                        if success:
+                            print(f"文件 {orig_filename} 处理并添加成功")
+                            total_docs += 1  # 增加成功处理的文档计数
+                        else:
+                            # 获取更详细的错误信息
+                            error_msg = f"文件 {orig_filename} 添加到知识库失败 - RAGService.add_documents返回False"
+                            print(error_msg)
+                            
+                            # 尝试获取更多诊断信息
+                            try:
+                                kb_info = rag_service.get_knowledge_base_info(kb_name)
+                                print(f"知识库状态: {kb_info}")
+                            except Exception as diag_e:
+                                print(f"无法获取知识库诊断信息: {str(diag_e)}")
+                            
+                            failed_files.append(f"{orig_filename} (添加到知识库失败)")
+                    
+                    except Exception as add_e:
+                        error_msg = f"添加文档到知识库时发生异常: {str(add_e)}"
+                        print(error_msg)
+                        traceback.print_exc()
+                        failed_files.append(f"{orig_filename} (添加异常: {str(add_e)})")
+                
                 except Exception as e:
-                    print(f"处理并添加文档时出错: {str(e)}")
+                    error_msg = f"处理并添加文档时出错: {str(e)}"
+                    print(error_msg)
                     traceback.print_exc()
                     failed_files.append(f"{orig_filename} (处理错误: {str(e)})")
                 
@@ -633,23 +671,26 @@ async def get_file_info(kb_name: str, file_name: str):
 
 @app.delete("/kb/file/{kb_name}/{file_name}")
 async def delete_file_from_kb(kb_name: str, file_name: str):
-    """从知识库中删除文件"""
+    """从知识库中删除指定文件"""
     try:
         global rag_service
         if not rag_service:
             rag_service = RAGService()
             
         # URL解码文件名
-        decoded_file_name = quote(file_name, safe='')
+        decoded_file_name = unquote(file_name)
+        print(f"删除文件请求 - 原始文件名: {file_name}, 解码后: {decoded_file_name}")
         
+        # 使用解码后的文件名进行删除操作
         success = rag_service.delete_file(kb_name, decoded_file_name)
-        if success:
-            return {
-                "status": "success",
-                "message": f"成功从知识库 {kb_name} 中删除文件 {file_name}"
-            }
-        else:
-            raise HTTPException(status_code=404, detail=f"文件 {file_name} 在知识库 {kb_name} 中不存在或删除失败")
+        
+        if not success:
+            raise HTTPException(status_code=404, detail=f"文件 {decoded_file_name} 在知识库 {kb_name} 中不存在或删除失败")
+        
+        return {
+            "status": "success",
+            "message": f"成功从知识库 {kb_name} 中删除文件 {decoded_file_name}"
+        }
     except Exception as e:
         error_trace = traceback.format_exc()
         raise HTTPException(status_code=500, detail=f"删除文件失败: {str(e)}\n{error_trace}")
@@ -658,7 +699,7 @@ async def delete_file_from_kb(kb_name: str, file_name: str):
 async def replace_file(
     kb_name: str = Form(...),
     file_to_replace: str = Form(...),
-    new_file: UploadFile = File(...),
+    file: UploadFile = File(...),
     chunk_config: str = Form("{}")
 ):
     """替换知识库中的文件"""
@@ -688,14 +729,14 @@ async def replace_file(
         temp_dir = "temp_files"
         os.makedirs(temp_dir, exist_ok=True)
         temp_file_id = str(uuid.uuid4())
-        temp_path = os.path.join(temp_dir, f"{temp_file_id}_{new_file.filename}")
+        temp_path = os.path.join(temp_dir, f"{temp_file_id}_{file.filename}")
         
         with open(temp_path, "wb") as buffer:
-            content = await new_file.read()
+            content = await file.read()
             buffer.write(content)
         
         # 获取文件扩展名
-        _, file_ext = os.path.splitext(new_file.filename.lower())
+        _, file_ext = os.path.splitext(file.filename.lower())
         print(f"文件扩展名: {file_ext}")
         
         # 处理文件内容
@@ -705,14 +746,14 @@ async def replace_file(
             
             if not result.get('content'):
                 os.remove(temp_path)  # 清理临时文件
-                raise HTTPException(status_code=400, detail=f"无法从文件中提取内容: {new_file.filename}")
+                raise HTTPException(status_code=400, detail=f"无法从文件中提取内容: {file.filename}")
             
             # 替换知识库中的文件
             success = rag_service.replace_file(
                 kb_name=kb_name,
                 file_to_replace=decoded_file_to_replace,
                 new_file_path=temp_path,
-                new_file_name=new_file.filename,
+                new_file_name=file.filename,
                 chunk_method=chunk_method,
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap
@@ -872,16 +913,41 @@ def update_processing_task(task_id: str, progress: int, message: str):
             "message": message
         }
 
-def start_api_server(host: str = "0.0.0.0", port: int = 8023):
+def start_api_server(host: str = "0.0.0.0", port: int = 8028):
     """启动API服务器"""
     import uvicorn
+    print(f"启动API服务器: {host}:{port}")
     try:
-        uvicorn.run(app, host=host, port=port)
+        uvicorn.run(app, host=host, port=port, log_level="info")
     except Exception as e:
         print(f"API服务器启动失败: {e}")
         traceback.print_exc()
         # 防止直接退出
         input("按Enter键退出...")
 
+@app.post("/kb/fix_dimension/{kb_name}")
+async def fix_dimension_mismatch(kb_name: str):
+    """修复知识库的维度不匹配问题"""
+    try:
+        global rag_service
+        if not rag_service:
+            rag_service = RAGService()
+            
+        result = rag_service.fix_dimension_mismatch(kb_name)
+        
+        if result.get("status") == "success":
+            return {"status": "success", "message": result["message"], "data": result}
+        else:
+            raise HTTPException(status_code=400, detail=result.get("message", "修复失败"))
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=f"修复维度不匹配问题失败: {str(e)}\n{error_trace}")
+
 if __name__ == "__main__":
-    start_api_server()
+    import argparse
+    parser = argparse.ArgumentParser(description='启动API服务器')
+    parser.add_argument('--host', default='0.0.0.0', help='服务器主机地址')
+    parser.add_argument('--port', type=int, default=8028, help='服务器端口')
+    args = parser.parse_args()
+    
+    start_api_server(host=args.host, port=args.port)
