@@ -130,7 +130,28 @@ if %errorlevel% equ 0 (
         echo NVIDIA GPU detected, installing GPU dependencies...
         echo Installing base dependencies first...
         python -m pip install --upgrade pip setuptools wheel --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
+        
+        echo Installing numpy with multiple fallback strategies...
         python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
+        if !errorlevel! neq 0 (
+            echo Aliyun mirror failed, trying Tsinghua mirror...
+            python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://pypi.tuna.tsinghua.edu.cn/simple/
+            if !errorlevel! neq 0 (
+                echo Tsinghua mirror failed, trying official PyPI...
+                python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR%
+                if !errorlevel! neq 0 (
+                    echo Specific version failed, trying latest compatible version...
+                    python -m pip install numpy --cache-dir %PIP_CACHE_DIR%
+                    if !errorlevel! neq 0 (
+                        echo NumPy installation failed completely. Please check your Python environment.
+                        pause
+                        exit /b 1
+                    )
+                )
+            )
+        )
+        echo NumPy installed successfully!
+        
         python -m pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --cache-dir %PIP_CACHE_DIR% -i https://download.pytorch.org/whl/cu121
         echo Installing remaining dependencies...
         pip install -r requirements_gpu.txt --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
@@ -148,7 +169,28 @@ goto EndGPUCheck
 :InstallCPUVersion
 echo Installing base dependencies first...
 python -m pip install --upgrade pip setuptools wheel --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
+
+echo Installing numpy with multiple fallback strategies...
 python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
+if !errorlevel! neq 0 (
+    echo Aliyun mirror failed, trying Tsinghua mirror...
+    python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://pypi.tuna.tsinghua.edu.cn/simple/
+    if !errorlevel! neq 0 (
+        echo Tsinghua mirror failed, trying official PyPI...
+        python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR%
+        if !errorlevel! neq 0 (
+            echo Specific version failed, trying latest compatible version...
+            python -m pip install numpy --cache-dir %PIP_CACHE_DIR%
+            if !errorlevel! neq 0 (
+                echo NumPy installation failed completely. Please check your Python environment.
+                pause
+                exit /b 1
+            )
+        )
+    )
+)
+echo NumPy installed successfully!
+
 python -m pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --cache-dir %PIP_CACHE_DIR% -i https://download.pytorch.org/whl/cpu
 echo Installing remaining dependencies...
 pip install -r requirements_cpu.txt --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
