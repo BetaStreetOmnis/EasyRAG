@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.9+-green.svg)](https://python.org)
 [![Docker](https://img.shields.io/badge/Docker-支持-blue.svg)](https://docker.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)]()
-[![Stars](https://img.shields.io/github/stars/your-username/EasyRAG?style=social)](https://github.com/your-username/EasyRAG)
+[![Stars](https://img.shields.io/github/stars/BetaStreetOmnis/EasyRAG?style=social)](https://github.com/BetaStreetOmnis/EasyRAG)
 
 [中文](README.md) | [English](README_EN.md)
 
@@ -18,15 +18,16 @@
 
 ## 📖 项目简介
 
-**EasyRAG** 是一个灵活、易用的本地知识库增强问答系统。它集成了先进的检索技术和多样化的大语言模型（LLM），能帮助用户快速构建、查询和管理本地知识库，实现精准、智能的问答体验。
+**EasyRAG** 是一个专业的本地知识库构建与检索系统，专注于为AI应用提供高性能的知识检索服务。它集成了先进的混合检索技术和多样化的Embedding模型，能帮助开发者快速构建、管理本地知识库，为各种AI应用提供精准的知识检索API。
 
 ### ✨ 核心特色
 - 🔒 **完全本地部署** - 数据安全与私密性保障，无需担心数据泄露
 - 🎯 **混合搜索技术** - 向量检索 + 关键词检索，检索精度提升40%
-- 🤖 **多模型支持** - 支持20+本地模型 + 主流API模型
+- 🤖 **多模型支持** - 支持20+Embedding模型，灵活选择最优方案
 - 📚 **多格式文档** - 支持PDF、Word、Markdown、TXT等10+格式
 - 🔄 **一键部署** - Docker/脚本自动化部署，3分钟快速上手
-- ⚡ **高性能** - 毫秒级检索响应，支持百万级文档库
+- ⚡ **高性能API** - 毫秒级检索响应，支持百万级文档库
+- 🔗 **生态集成** - 为[DocuGen](https://github.com/BetaStreetOmnis/DocuGen)等AI应用提供知识检索服务
 
 ### 🏆 性能对比
 
@@ -38,6 +39,36 @@
 | 🎯 检索精度 | 🎯 95%+ | 📊 80%+ | 📊 85%+ |
 | 🔧 自定义 | ✅ 完全可控 | ✅ 可控 | ❌ 受限 |
 | 📚 文档支持 | 📄 10+格式 | 📄 基础格式 | 📄 有限格式 |
+
+---
+
+## 🌟 生态系统
+
+<div align="center">
+
+```mermaid
+graph LR
+    A[📚 EasyRAG<br/>知识库系统] --> B[🖋️ DocuGen<br/>文档生成]
+    A --> C[💬 聊天机器人]
+    A --> D[🔍 搜索引擎]
+    A --> E[📊 数据分析]
+    
+    style A fill:#e3f2fd
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+    style D fill:#fff3e0
+    style E fill:#fce4ec
+```
+
+</div>
+
+### 🔗 相关项目
+
+| 项目 | 描述 | 链接 | 状态 |
+|------|------|------|------|
+| 🖋️ **DocuGen** | AI智能文档生成系统，基于EasyRAG知识库自动生成专业文档 | [GitHub](https://github.com/BetaStreetOmnis/DocuGen) | ✅ 可用 |
+| 💬 **ChatBot** | 智能对话机器人（计划中） | - | 🚧 开发中 |
+| 📊 **Analytics** | 知识库分析工具（计划中） | - | 📋 计划中 |
 
 ---
 
@@ -70,9 +101,9 @@
 </td>
 <td width="50%">
 
-### 💬 智能对话
-![智能对话](images/chat_interface.png)
-*上下文感知的智能对话*
+### 📊 API文档
+![API文档](images/api_docs.png)
+*完整的RESTful API接口*
 
 </td>
 </tr>
@@ -109,21 +140,21 @@
 <td width="50%">
 
 ### 🤖 灵活的模型支持
-- 🏠 **本地模型** - DeepSeek、Qwen、Yi、ChatGLM等
-- 🌐 **API模型** - GPT-4、Claude、Gemini等
-- ⚙️ **参数调节** - 温度、Top-P、最大长度
+- 🏠 **本地模型** - bge-m3、bge-large-zh等
+- 🌐 **API模型** - OpenAI、Azure等Embedding服务
+- ⚙️ **参数调节** - 维度、批处理大小等
 - 🔄 **热切换** - 无需重启即可切换模型
 - 💾 **模型管理** - 自动下载、缓存、更新
 
 </td>
 <td width="50%">
 
-### 💬 智能问答与对话
-- 🎯 **知识增强** - 结合检索结果生成答案
-- 🔄 **多轮对话** - 上下文感知，记忆前序对话
-- 📊 **结果可视化** - 检索片段、相关度展示
-- 🎛️ **实时调整** - 动态修改检索和生成参数
-- 💾 **对话历史** - 自动保存，支持导出
+### 🔗 API接口服务
+- 🚀 **RESTful API** - 标准化的HTTP接口
+- 📊 **批量检索** - 支持批量查询优化性能
+- 🔍 **多种检索模式** - 语义/关键词/混合检索
+- 📈 **性能监控** - 实时监控检索性能指标
+- 🔧 **灵活配置** - 支持动态调整检索参数
 
 </td>
 </tr>
@@ -190,7 +221,7 @@ graph TD
 ```bash
 # 1️⃣ 确保已安装 Docker 和 Docker Compose
 # 2️⃣ 克隆项目到本地
-git clone https://github.com/your-username/EasyRAG.git
+git clone https://github.com/BetaStreetOmnis/EasyRAG.git
 cd EasyRAG
 
 # 3️⃣ 一键启动所有服务
@@ -236,7 +267,7 @@ chmod +x deploy.sh start.sh
 
 ```bash
 # 1️⃣ 克隆项目
-git clone https://github.com/your-username/EasyRAG.git
+git clone https://github.com/BetaStreetOmnis/EasyRAG.git
 cd EasyRAG
 
 # 2️⃣ 创建虚拟环境
@@ -352,7 +383,7 @@ start.bat
 - 🔌 智能激活虚拟环境
 - 📋 自动加载配置文件
 - 🚀 后台启动知识库系统
-- �� 彩色终端状态输出
+- 🎉 彩色终端状态输出
 - 📊 实时显示服务状态
 
 **⏱️ 启动时间**: ~20秒
@@ -410,17 +441,44 @@ sequenceDiagram
 4. 🧩 选择分块策略（文档类型决定）
 5. 📤 上传文档文件（支持拖拽批量上传）
 6. ⏳ 等待系统自动处理并构建向量索引
-7. ✅ 创建完成，可以开始问答
+7. ✅ 创建完成，可以通过API进行检索
 
-### 💬 知识库问答
+### 🔍 API检索调用
 
-**操作流程**：
-1. 🌐 选择"知识库对话"选项卡
-2. 📚 左侧选择已创建的知识库
-3. 🤖 右侧选择大语言模型
-4. ⚙️ 调整检索策略和模型参数
-5. 💬 输入问题，获得智能回答
-6. 📊 查看检索到的相关文档片段
+**基础检索示例**：
+```python
+import requests
+
+# 检索API调用
+response = requests.post("http://localhost:8000/search", json={
+    "knowledge_base_id": "your_kb_id",
+    "query": "你的查询问题",
+    "top_k": 5,
+    "search_mode": "hybrid"  # vector/keyword/hybrid
+})
+
+results = response.json()
+for result in results["documents"]:
+    print(f"相关度: {result['score']}")
+    print(f"内容: {result['content']}")
+```
+
+**与DocuGen集成示例**：
+```python
+# DocuGen调用EasyRAG进行知识检索
+def get_knowledge_context(topic):
+    response = requests.post("http://localhost:8000/search", json={
+        "knowledge_base_id": "document_kb",
+        "query": topic,
+        "top_k": 10,
+        "search_mode": "hybrid"
+    })
+    return response.json()["documents"]
+
+# 基于检索结果生成文档
+context = get_knowledge_context("人工智能发展趋势")
+# 传递给DocuGen进行文档生成...
+```
 
 ### 🔧 高级配置
 
@@ -435,7 +493,6 @@ WEB_PORT=7861
 # 模型配置
 EMBEDDING_MODEL=BAAI/bge-m3
 RERANK_MODEL=BAAI/bge-reranker-base
-LLM_MODEL=deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct
 
 # 数据库配置
 DATABASE_URL=sqlite:///./knowledge_base.db
@@ -452,6 +509,11 @@ MAX_CHUNK_SIZE=500
 # 日志配置
 LOG_LEVEL=INFO
 LOG_FILE=./logs/easyrag.log
+
+# API配置
+MAX_QUERY_LENGTH=1000
+ENABLE_RERANK=true
+BATCH_SIZE=32
 ```
 
 </details>
@@ -464,7 +526,7 @@ LOG_FILE=./logs/easyrag.log
 🏗️ EasyRAG 系统架构
 ├── 🐳 docker-compose.yml     # Docker编排配置
 ├── 🚀 app.py                 # FastAPI后端主服务
-├── 🌐 ui_new.py              # Gradio前端界面
+├── 🌐 ui_new.py              # Gradio管理界面
 ├── 📜 deploy.bat/deploy.sh   # 自动部署脚本
 ├── 🚀 start.bat/start.sh     # 快速启动脚本
 ├── ⚙️ .env                   # 环境配置文件
@@ -472,7 +534,7 @@ LOG_FILE=./logs/easyrag.log
 │   ├── 📄 kb_doc_process.py  # 文档处理与智能分块
 │   ├── 🔍 kb_retriever.py    # 混合检索引擎
 │   ├── 🏆 kb_reranker.py     # 智能重排序模块
-│   ├── 🤖 llm_interface.py   # LLM统一接口层
+│   ├── 🔗 api_interface.py   # API接口层
 │   ├── 💾 database.py        # 数据库操作层
 │   └── 🛠️ utils.py           # 通用工具函数
 ├── 📦 models/                # 模型文件目录
@@ -489,7 +551,7 @@ LOG_FILE=./logs/easyrag.log
 
 <table>
 <tr>
-<td width="33%">
+<td width="50%">
 
 #### 📊 Embedding模型
 | 模型名称 | 维度 | 语言 | 性能 |
@@ -500,19 +562,7 @@ LOG_FILE=./logs/easyrag.log
 | sentence-transformers | 768 | 英文 | ⚡ 良好 |
 
 </td>
-<td width="33%">
-
-#### 🧠 大语言模型
-| 模型类型 | 模型名称 | 参数量 | 推荐 |
-|----------|----------|--------|------|
-| **本地模型** | DeepSeek-V2 | 7B | ⭐⭐⭐ |
-| 本地模型 | Qwen2-7B | 7B | ⭐⭐⭐ |
-| 本地模型 | ChatGLM3-6B | 6B | ⭐⭐ |
-| **API模型** | GPT-4 | - | ⭐⭐⭐ |
-| API模型 | Claude-3 | - | ⭐⭐⭐ |
-
-</td>
-<td width="33%">
+<td width="50%">
 
 #### 🏆 重排模型
 | 模型名称 | 精度 | 速度 | 推荐 |
@@ -658,6 +708,25 @@ python app.py --debug
 </details>
 
 <details>
+<summary>❓ 如何与DocuGen集成？</summary>
+
+**集成方式**:
+1. 确保EasyRAG服务运行在 `http://localhost:8000`
+2. 在DocuGen的 `.env` 中配置 `EASYRAG_API_URL=http://localhost:8000`
+3. DocuGen会自动调用EasyRAG的检索API获取相关知识
+
+**API调用示例**:
+```python
+# DocuGen中的调用方式
+response = requests.post("http://localhost:8000/search", json={
+    "knowledge_base_id": "your_kb_id",
+    "query": "查询内容",
+    "top_k": 10
+})
+```
+</details>
+
+<details>
 <summary>❓ 如何选择合适的模型？</summary>
 
 **Embedding模型选择**:
@@ -665,10 +734,10 @@ python app.py --debug
 - 多语言文档: `bge-m3` (推荐)
 - 英文文档: `sentence-transformers`
 
-**LLM模型选择**:
-- 高质量回答: GPT-4 (需API)
-- 本地部署: DeepSeek-V2-7B
-- 快速响应: Qwen2-7B
+**重排模型选择**:
+- 高精度要求: `bge-reranker-large`
+- 平衡性能: `bge-reranker-base` (推荐)
+- 快速响应: `ms-marco-MiniLM`
 </details>
 
 <details>
@@ -729,7 +798,7 @@ cp -r /path/to/backup/knowledge_bases/ data/
 ```bash
 # 1. Fork项目到你的GitHub
 # 2. 克隆到本地
-git clone https://github.com/your-username/EasyRAG.git
+git clone https://github.com/BetaStreetOmnis/EasyRAG.git
 
 # 3. 创建开发分支
 git checkout -b feature/your-feature-name
@@ -754,14 +823,14 @@ git push origin feature/your-feature-name
 ### 🆘 获取帮助
 1. 📋 **查看文档**: 阅读本README和[详细文档](docs/)
 2. 🔍 **搜索问题**: 在Issues中搜索类似问题
-3. 🐛 **提交Issue**: [创建新Issue](https://github.com/your-username/EasyRAG/issues/new)
-4. 💬 **加入讨论**: [GitHub Discussions](https://github.com/your-username/EasyRAG/discussions)
+3. 🐛 **提交Issue**: [创建新Issue](https://github.com/BetaStreetOmnis/EasyRAG/issues/new)
+4. 💬 **加入讨论**: [GitHub Discussions](https://github.com/BetaStreetOmnis/EasyRAG/discussions)
 
 ### 🌟 社区资源
-- 📚 **详细文档**: [在线文档](https://your-username.github.io/EasyRAG)
+- 📚 **详细文档**: [在线文档](https://BetaStreetOmnis.github.io/EasyRAG)
 - 🎥 **视频教程**: [B站教程](https://space.bilibili.com/your-channel)
 - 💬 **QQ交流群**: 123456789
-- 🐦 **微信群**: 扫描二维码加入
+- 🌟 **微信群**: 扫描二维码加入
 
 ---
 
@@ -774,15 +843,20 @@ git push origin feature/your-feature-name
 - [Faiss](https://github.com/facebookresearch/faiss) - 高效向量相似度搜索
 - [LangChain](https://langchain.com/) - LLM应用开发框架
 
+**特别感谢**：
+- 🖋️ [DocuGen](https://github.com/BetaStreetOmnis/DocuGen) - 基于EasyRAG的智能文档生成系统
+
 ---
 
 <div align="center">
 
 ### 🌟 如果这个项目对您有帮助，请给我们一个Star！⭐
 
-[![Star History Chart](https://api.star-history.com/svg?repos=your-username/EasyRAG&type=Date)](https://star-history.com/#your-username/EasyRAG&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=BetaStreetOmnis/EasyRAG&type=Date)](https://star-history.com/#BetaStreetOmnis/EasyRAG&Date)
 
 **Made with ❤️ by EasyRAG Team**
+
+**🔗 生态项目**: [DocuGen - AI文档生成](https://github.com/BetaStreetOmnis/DocuGen) | [在线体验DocuGen](http://150.138.81.55:8080/)
 
 [⬆️ 回到顶部](#-easyrag---轻量级本地知识库增强系统)
 
