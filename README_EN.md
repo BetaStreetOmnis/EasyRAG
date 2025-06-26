@@ -70,7 +70,7 @@ If one-click deployment is not suitable for your environment, you can also insta
    - CPU version: `pip install -r requirements_cpu.txt`
    - GPU version: `pip install -r requirements_gpu.txt`
 5. Start services:
-   - API server: `python api_server.py`
+   - API server: `python app.py`
    - Web interface: `python ui_new.py`
 
 ### Important Note: Faiss Installation
@@ -120,7 +120,7 @@ After starting the services, access the following addresses in your browser:
 
 ## System Architecture
 
-- `api_server.py`: Backend API service
+- `app.py`: Backend API service
 - `ui_new.py`: Web user interface
 - `core/`: Core function modules
   - `kb_doc_process.py`: Document processing module

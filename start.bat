@@ -12,6 +12,6 @@ if exist .env (
 )
 
 REM 启动API服务器
-python api_server.py
+python app.py
 
 pause 

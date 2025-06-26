@@ -4,7 +4,7 @@
 
 ## 项目简介
 
-EasyRAG是一个基于本地知识库的智能问答系统，能够帮助用户快速检索和获取知识库中的信息。系统集成了向量检索和大型语言模型，实现了智能化的知识问答。通过DeepSeek 1.5B模型的支持，系统能够基于知识库检索结果生成更加智能和准确的回答。
+EasyRAG是一个灵活、易用的本地知识库增强问答系统。它集成了先进的检索技术和多样化的大语言模型（LLM），能帮助用户快速构建、查询和管理本地知识库，实现精准、智能的问答体验。系统支持混合搜索、重排序和多种模型切换，所有功能均可在本地部署，确保数据安全与私密性。
 
 ## 界面预览
 
@@ -14,6 +14,7 @@ EasyRAG是一个基于本地知识库的智能问答系统，能够帮助用户�
 ### 文件上传
 ![文件上传](images/file_upload.png)
 
+
 ### 知识库检索
 ![知识库检索](images/search_interface.png)
 
@@ -22,196 +23,146 @@ EasyRAG是一个基于本地知识库的智能问答系统，能够帮助用户�
 
 ## 主要功能
 
-- 知识库管理：创建、更新和删除知识库
-- 文档处理：支持PDF、Word、文本等多种文档格式
-- 智能检索：基于向量相似度的精准内容检索
-- 智能问答：结合知识库内容生成准确的回答
-- 本地部署：所有功能在本地运行，保障数据安全
-- DeepSeek集成：使用DeepSeek 1.5B模型提供智能回答
-- 上下文感知：支持上下文感知的对话
-- 多样化分块策略：支持多种文档分块方法，包括新增的子标题分块，可保留大标题信息
+- **知识库管理**：支持创建、更新和删除知识库。
+- **多格式文档处理**：支持PDF、Word、Markdown、文本等多种格式，并集成OCR功能识别图片中的文字。
+- **高级检索策略**：
+  - **混合搜索 (Hybrid Search)**：结合向量检索与关键词检索（BM25），提升召回率和准确性。
+  - **重排序 (Reranking)**：集成重排模型，对检索结果进行二次排序，优化答案相关性。
+- **灵活的模型支持**：
+  - **本地大模型**：无缝集成DeepSeek, Qwen, Yi等多种主流开源大模型。
+  - **API模型**：支持通过API密钥调用外部模型服务（如GPT, Claude等）。
+- **智能问答与对话**：
+  - 结合知识库内容生成准确、自然的回答。
+  - 支持上下文感知的多轮对话。
+- **多样化分块策略**：支持多种文档分块方法，包括语义分块、递归字符分块，以及专为技术文档优化的子标题分块。
+- **一键化本地部署**：提供Docker、Windows/Linux脚本等多种部署方式，实现全流程自动化，保障数据安全。
+- **模型参数可调**：在Web界面中开放LLM参数调整，方便用户定制生成效果。
 
 ## 系统要求
 
 - 操作系统：Windows/Linux/MacOS
-- 推荐Python版本：Python 3.9
-- 内存：至少4GB（推荐8GB以上）
-- 磁盘空间：至少需要5GB可用空间
-- GPU（可选）：支持CUDA的NVIDIA GPU可提升性能
+- **推荐部署方式**：Docker 和 Docker Compose
+- Python版本（手动安装）：Python 3.9+
+- 内存：至少8GB（推荐16GB以上，取决于所用模型大小）
+- 磁盘空间：至少需要10GB可用空间（用于存放模型和知识库）
+- GPU（可选）：支持CUDA的NVIDIA GPU可大幅提升模型推理性能。
 
 ## 快速开始
 
-### 一键部署
+### Docker一键部署 (推荐)
+
+1.  确保已安装 [Docker](https://www.docker.com/get-started) 和 [Docker Compose](https://docs.docker.com/compose/install/)。
+2.  在项目根目录下，执行命令：
+    ```bash
+    docker-compose up --build -d
+    ```
+3.  服务启动后，即可在浏览器中访问 `http://localhost:7861`。
+
+### 脚本部署
 
 #### Windows用户
 
-1. 双击`deploy.bat`文件
-2. 脚本会自动检查Python环境，必要时下载并安装
-3. 创建虚拟环境并安装所需依赖
-4. 自动启动API服务器和Web界面
+1.  双击`deploy.bat`文件。
+2.  脚本会自动检查Python环境，创建虚拟环境并安装所需依赖。
+3.  自动启动API服务器和Web界面。
 
 #### Linux/Unix用户
 
-1. 打开终端，进入项目目录
-2. 给脚本添加执行权限：`chmod +x deploy.sh`
-3. 运行脚本：`./deploy.sh`
-4. 脚本会自动检查环境，安装依赖并启动服务
+1.  打开终端，进入项目目录。
+2.  给脚本添加执行权限：`chmod +x deploy.sh`
+3.  运行脚本：`./deploy.sh`
+4.  脚本会自动检查环境，安装依赖并启动服务。
 
 ### 手动安装
 
-如果一键部署不适合您的环境，也可以按以下步骤手动安装：
-
-1. 确保安装了Python 3.9
-2. 创建虚拟环境：`python -m venv py_env`
-3. 激活虚拟环境：
-   - Windows: `py_env\Scripts\activate`
-   - Linux/Mac: `source py_env/bin/activate`
-4. 安装依赖：
-   - CPU版本：`pip install -r requirements_cpu.txt`
-   - GPU版本：`pip install -r requirements_gpu.txt`
-5. 启动服务：
-   - API服务器：`python api_server.py`
-   - Web界面：`python ui_new.py`
+1.  确保安装了Python 3.9或更高版本。
+2.  创建虚拟环境：`python -m venv venv`
+3.  激活虚拟环境：
+    - Windows: `venv\Scripts\activate`
+    - Linux/Mac: `source venv/bin/activate`
+4.  安装依赖：
+    - CPU版本：`pip install -r requirements_cpu.txt`
+    - GPU版本：`pip install -r requirements_gpu.txt`
+5.  启动服务：
+    - API服务器：`python app.py`
+    - Web界面：`python ui_new.py`
 
 ### 重要说明：Faiss安装
 
-**注意**：部署脚本暂时跳过了Faiss向量库的安装，因为在Windows环境下可能遇到编译问题。您需要手动安装Faiss才能使用完整的向量检索功能：
+**注意**：对于手动或脚本安装，Faiss向量库可能因编译问题安装失败。Docker部署已包含此依赖。
 
 - CPU版本：`pip install faiss-cpu`
 - GPU版本：`pip install faiss-gpu`
 
-如果上述命令在您的环境中安装失败，可以尝试以下替代方法：
-
-1. 使用预编译的wheel包：
-   ```
-   pip install faiss-cpu --only-binary=faiss-cpu
-   ```
-
-2. 或者从非官方源安装：
-   ```
-   pip install faiss-cpu -f https://dl.fbaipublicfiles.com/faiss/wheel/faiss_cpu-1.7.4-cp39-cp39-win_amd64.whl
-   ```
-
-3. 对于Linux用户，可以尝试：
-   ```
-   pip install faiss-cpu -f https://dl.fbaipublicfiles.com/faiss/wheel/faiss_cpu-1.7.4-cp39-cp39-linux_x86_64.whl
-   ```
+如果安装失败，请参考官方文档或尝试使用预编译包。
 
 ## 使用说明
 
 启动服务后，在浏览器中访问以下地址：
 
 - Web界面：`http://localhost:7861`
-- API服务：`http://localhost:8000`
+- API文档：`http://localhost:8000/docs`
 
 ### 创建知识库
 
-1. 访问Web界面，选择"知识库管理"选项卡
-2. 点击"创建知识库"，输入知识库名称
-3. 上传文档或粘贴文本
-4. 系统会自动处理文档并构建索引
+1.  访问Web界面，选择"知识库管理"选项卡。
+2.  点击"创建知识库"，输入知识库名称，并选择Embedding模型和分块策略。
+3.  上传文档（支持拖拽）或粘贴文本。
+4.  系统会自动处理文档并构建索引。
 
 ### 使用知识库问答
 
-1. 选择"知识库对话"选项卡
-2. 选择已创建的知识库
-3. 输入问题并发送
-4. 系统会检索相关内容并使用DeepSeek模型生成回答
+1.  选择"知识库对话"选项卡。
+2.  在左侧选择已创建的知识库。
+3.  在右侧选择对话使用的大语言模型，并按需调整检索策略（如混合搜索）和模型参数（如温度）。
+4.  输入问题并发送，系统将生成回答。
 
 ## 系统架构
 
-- `api_server.py`：后端API服务
-- `ui_new.py`：Web用户界面
+- `docker-compose.yml`：Docker部署配置文件
+- `app.py`：后端FastAPI服务
+- `ui_new.py`：前端Gradio用户界面
 - `core/`：核心功能模块
-  - `kb_doc_process.py`：文档处理模块
-  - `kb_vector_store.py`：向量存储模块
-  - `llm_model.py`：语言模型模块（包含DeepSeek模型支持）
-- `deploy.bat`/`deploy.sh`：部署脚本
+  - `kb_doc_process.py`：文档处理与分块模块（含OCR）
+  - `kb_retriever.py`：检索模块（向量、关键词、混合搜索）
+  - `kb_reranker.py`：重排模块
+  - `llm_interface.py`：统一的大语言模型接口（本地与API）
+- `deploy.bat`/`deploy.sh`：自动化部署脚本
 
 ## 技术细节
 
-### 模型信息
+### 模型支持
 
-- 使用的模型：DeepSeek-Chat-1.5B-Base
-- 模型来源：ModelScope
-- 模型大小：约3GB
-- 首次使用时会自动下载到本地
+- **Embedding模型**：默认为`bge-m3`，支持切换其他Sentence-Transformer模型，用于将文本向量化。
+- **大语言模型 (LLM)**：默认使用`DeepSeek-Chat-1.5B-Base`，同时支持通过HuggingFace加载`Qwen`, `Yi`等主流开源模型。也支持配置API Key使用外部模型。
+- **重排模型 (Reranker)**：默认使用`bge-reranker-base`，用于在检索后对结果进行精排序，提升精度。
 
-### 文档分块策略
+所有本地模型在首次使用时会自动从网络下载并缓存。
 
-系统支持多种文档分块策略，适用于不同类型的文档：
+### 检索与分块
 
-- 语义分块：根据语义边界划分文档，适合一般文本
-- 递归字符分块：基于字符级别的分块，适合非结构化文本
-- Markdown标题分块：基于Markdown标题的分块，适合有明确标题的文档
-- 层次分块：保留文档层次结构的分块方法
-- 子标题分块：专为技术文档和白皮书设计，按小标题分块同时保留大标题信息，便于精确检索
-
-分块策略可在知识库创建时选择，也可通过API进行自定义配置。
+- **检索策略**：支持向量检索、关键词检索（BM25）和混合搜索。用户可在对话时灵活选择。
+- **文档分块策略**：系统支持多种文档分块策略，适用于不同类型的文档：
+  - **语义分块**：根据语义边界划分文档，适合一般文本。
+  - **递归字符分块**：基于字符级别的分块，适合非结构化文本。
+  - **Markdown标题分块**：基于Markdown标题的分块。
+  - **子标题分块**：专为技术文档和白皮书设计，按小标题分块同时保留大标题信息，便于精确检索。
 
 ## 问题排查
 
 如遇到问题，请检查：
 
-1. 网络连接是否正常（首次运行需要下载模型）
-2. 磁盘空间是否充足（至少需要5GB可用空间）
-3. 查看命令行窗口中的错误信息
-4. 检查faiss是否成功安装（使用`pip list | grep faiss`命令）
+1.  **Docker用户**：检查Docker服务是否正常运行。
+2.  **手动/脚本用户**：
+    - 网络连接是否正常（首次运行需要下载模型）。
+    - 磁盘空间是否充足（至少需要10GB可用空间）。
+    - 查看命令行窗口中的错误信息。
+    - 检查Faiss是否成功安装（`pip list | grep faiss`）。
 
 ### 常见问题解决方案
 
-#### 1. OpenCV依赖错误
+#### 1. OpenCV依赖错误 (Linux手动安装)
 
-如果遇到类似以下的OpenCV错误：
-```
-ImportError: libGL.so.1: cannot open shared object file: No such file or directory
-```
-
-这是因为缺少OpenCV所需的图形库依赖。解决方法：
+如果遇到`ImportError: libGL.so.1: cannot open shared object file`错误，说明缺少OpenCV的图形库依赖。
 
 **Ubuntu/Debian系统**：
-```bash
-sudo apt-get update
-sudo apt-get install -y libgl1-mesa-glx
-```
-
-如果OCR功能还需要其他依赖，可同时安装这些常用图形库：
-```bash
-sudo apt-get install -y libglib2.0-0 libsm6 libxrender1 libxext6
-```
-
-**CentOS/RHEL系统**：
-```bash
-sudo yum install mesa-libGL
-```
-
-**Arch Linux**：
-```bash
-sudo pacman -S mesa
-```
-
-安装完依赖后，重新运行启动脚本。
-
-## 注意事项
-
-1. 模型初次加载需要下载约3GB数据，请确保网络畅通
-2. 在CPU环境下，模型响应可能较慢，建议有GPU的环境运行
-3. 部署脚本需要管理员/root权限安装Python（如果系统中不存在）
-
-## 技术栈
-
-- 前端：Gradio
-- 后端：FastAPI
-- 向量检索：Faiss
-- 语言模型：DeepSeek 1.5B和其他支持的模型
-
-## 后续改进方向
-
-1. 添加更多大型语言模型选择
-2. 优化模型推理速度
-3. 添加模型参数调整界面
-4. 增强多轮对话能力
-
-## 授权信息
-
-本项目仅供学习研究使用，不可用于商业目的。

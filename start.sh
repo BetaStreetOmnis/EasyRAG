@@ -1,4 +1,4 @@
-#!/bin/bash
+   #!/bin/bash
 
 echo "启动知识库管理系统..."
 
@@ -11,4 +11,4 @@ else
 fi
 
 # 启动API服务器
-python api_server.py 
+python app.py 

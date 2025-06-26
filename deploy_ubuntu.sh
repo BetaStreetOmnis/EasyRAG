@@ -199,7 +199,7 @@ source py_env/bin/activate
 
 # 启动API服务器
 echo "Starting API server..."
-python3 api_server.py > api_server.log 2>&1 &
+python3 app.py > app.log 2>&1 &
 API_PID=$!
 echo "API server started with PID: $API_PID"
 

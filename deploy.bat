@@ -191,7 +191,7 @@ echo Note: Press Ctrl+C to stop the services
 echo.
 
 :: Start two command prompt windows, one for API server, one for Web UI
-start cmd /k "call py_env\Scripts\activate.bat && python api_server.py"
+start cmd /k "call py_env\Scripts\activate.bat && python app.py"
 timeout /t 5 > nul
 start cmd /k "call py_env\Scripts\activate.bat && python ui.py"
 
