@@ -1,6 +1,8 @@
+<div align="center">
+
 # 🚀 EasyRAG - 轻量级本地知识库增强系统
 
-<div align="center">
+</div>
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.9+-green.svg)](https://python.org)
@@ -11,8 +13,6 @@
 [中文](README.md) | [English](README_EN.md)
 
 **🎯 一键部署 · 🔒 本地私有 · 🚀 高性能检索 · 🤖 多模型支持**
-
-</div>
 
 ---
 
