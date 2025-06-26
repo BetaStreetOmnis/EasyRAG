@@ -143,6 +143,29 @@ if %errorlevel% neq 0 (
 )
 echo Virtual environment activated successfully!
 
+:: Verify Python version in virtual environment
+echo Verifying Python version in virtual environment...
+for /f "tokens=2" %%i in ('python --version 2^>^&1') do set VENV_PYTHON_VERSION=%%i
+echo Virtual environment Python version: !VENV_PYTHON_VERSION!
+
+:: Check if it's Python 3.9.x
+for /f "tokens=1,2 delims=." %%a in ("!VENV_PYTHON_VERSION!") do (
+    set VENV_MAJOR=%%a
+    set VENV_MINOR=%%b
+)
+
+if !VENV_MAJOR! EQU 3 (
+    if !VENV_MINOR! EQU 9 (
+        echo ✅ Virtual environment is using Python 3.9 correctly!
+    ) else (
+        echo ⚠️  Warning: Virtual environment is using Python 3.!VENV_MINOR! instead of 3.9
+        echo This may cause compatibility issues.
+    )
+) else (
+    echo ⚠️  Warning: Virtual environment is using Python !VENV_MAJOR!.!VENV_MINOR! instead of 3.9
+    echo This may cause compatibility issues.
+)
+
 echo.
 
 :: Install dependencies
@@ -161,7 +184,28 @@ if %errorlevel% equ 0 (
         echo NVIDIA GPU detected, installing GPU dependencies...
         echo Installing base dependencies first...
         python -m pip install --upgrade pip setuptools wheel --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
+        
+        echo Installing numpy with multiple fallback strategies...
         python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
+        if !errorlevel! neq 0 (
+            echo Aliyun mirror failed, trying Tsinghua mirror...
+            python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://pypi.tuna.tsinghua.edu.cn/simple/
+            if !errorlevel! neq 0 (
+                echo Tsinghua mirror failed, trying official PyPI...
+                python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR%
+                if !errorlevel! neq 0 (
+                    echo Specific version failed, trying latest compatible version...
+                    python -m pip install numpy --cache-dir %PIP_CACHE_DIR%
+                    if !errorlevel! neq 0 (
+                        echo NumPy installation failed completely. Please check your Python environment.
+                        pause
+                        exit /b 1
+                    )
+                )
+            )
+        )
+        echo NumPy installed successfully!
+        
         python -m pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --cache-dir %PIP_CACHE_DIR% -i https://download.pytorch.org/whl/cu121
         echo Installing remaining dependencies...
         pip install -r requirements_gpu.txt --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
@@ -221,17 +265,29 @@ echo.
 echo Note: Press Ctrl+C to stop the services
 echo.
 
+:: Prepare the activation command for the virtual environment
+set VENV_ACTIVATE=%CD%\py_env\Scripts\activate.bat
+
 :: Start two command prompt windows, one for API server, one for Web UI
-start cmd /k "call py_env\Scripts\activate.bat && python app.py"
+echo Starting API server in new window...
+start cmd /k "call %VENV_ACTIVATE% && python app.py"
 timeout /t 5 > nul
-start cmd /k "call py_env\Scripts\activate.bat && python ui.py"
+
+echo Starting Web UI in new window...
+start cmd /k "call %VENV_ACTIVATE% && python ui.py"
 
 echo.
 echo EasyRAG knowledge base system started!
-echo API server running at: http://localhost:8000
+echo API server running at: http://localhost:8028
 echo Web interface running at: http://localhost:7861
 echo.
 echo Please visit http://localhost:7861 in your browser to use the system
+echo.
+echo Two new command prompt windows have been opened:
+echo - One for the API server (app.py)
+echo - One for the Web UI (ui.py)
+echo.
+echo Both are using the Python 3.9 virtual environment created by this script.
 echo.
 
 pause 
