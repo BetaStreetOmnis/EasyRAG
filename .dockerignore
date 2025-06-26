@@ -1,0 +1,49 @@
+# Git相关
+.git/
+.gitignore
+
+# Python缓存和虚拟环境
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyc
+*.pyd
+*$py.class
+py_env/
+venv/
+.venv/
+pip_cache/
+
+# 临时文件和日志
+*.log
+*.log.*
+*.tmp
+temp_files/
+
+# 编辑器/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统生成文件
+.DS_Store
+Thumbs.db
+
+# 部署脚本（Windows）
+*.bat
+install_python39_manual.bat
+
+# 运行时生成的数据（Docker容器启动时会创建）
+db/
+models_file/
+
+# 其他临时目录
+tmp/
+新建文件夹/
+
+# Docker相关文件（避免递归复制）
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+README_DOCKER.md 

@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  easyrag-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USE_GPU: ${USE_GPU:-false}
+    container_name: easyrag-api
+    ports:
+      - "8028:8028"
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8028
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./db:/app/db
+      - ./models_file:/app/models_file
+      - ./temp_files:/app/temp_files
+      - ./files:/app/files
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8028/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - easyrag-network
+
+  easyrag-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: easyrag-web
+    ports:
+      - "7861:7861"
+    environment:
+      - API_BASE_URL=http://easyrag-api:8028
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      easyrag-api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - easyrag-network
+
+networks:
+  easyrag-network:
+    driver: bridge
+
+volumes:
+  easyrag-db:
+  easyrag-models:
+  easyrag-temp: 
