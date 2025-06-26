@@ -537,10 +537,8 @@ echo   - GPU支持：!GPU_SUPPORT!
 echo   - Python版本：!VENV_PYTHON_VERSION!
 echo.
 
-set VENV_ACTIVATE=!CD!\py_env\Scripts\activate.bat
-
 echo 🔄 启动EasyRAG服务...
-start "EasyRAG Service" cmd /k "title EasyRAG Knowledge Base System && call !VENV_ACTIVATE! && echo 🚀 启动EasyRAG知识库系统... && python app.py"
+start "EasyRAG Service" cmd /k "title EasyRAG Knowledge Base System && call py_env\Scripts\activate.bat && echo 🚀 启动EasyRAG知识库系统... && python app.py"
 
 echo ⏳ 等待服务启动...
 timeout /t 8 /nobreak > nul
