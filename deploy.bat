@@ -73,7 +73,9 @@ curl -L "https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe" -o py
 if exist python-installer.exe (
     echo [Step 2/3] Download complete! Installing Python 3.9.13...
     echo Installing to: %LOCALAPPDATA%\Programs\Python\Python39
-    :: Install to a specific directory to avoid conflicts
+    
+    :: Try multiple installation strategies
+    echo Attempting installation method 1: User-level installation...
     start /wait python-installer.exe /quiet InstallAllUsers=0 TargetDir="%LOCALAPPDATA%\Programs\Python\Python39" PrependPath=0 Include_test=0
     
     :: Set Python path for this session
@@ -84,10 +86,72 @@ if exist python-installer.exe (
     echo [Step 3/3] Verifying Python 3.9 installation...
     "%PYTHON39_PATH%\python.exe" --version >nul 2>nul
     if !errorlevel! neq 0 (
-        echo Python 3.9 installation failed. Please try the following:
-        echo 1. Run this script as Administrator
-        echo 2. Check your internet connection
-        echo 3. Manually install Python 3.9.13 from: https://www.python.org/downloads/release/python-3913/
+        echo First installation attempt failed, trying alternative method...
+        
+        :: Try simpler installation without target directory
+        echo Attempting installation method 2: Default user installation...
+        start /wait python-installer.exe /quiet InstallAllUsers=0 PrependPath=0 Include_test=0
+        
+        :: Try to find Python 3.9 in common locations
+        set PYTHON39_PATH=
+        if exist "%LOCALAPPDATA%\Programs\Python\Python39\python.exe" (
+            set PYTHON39_PATH=%LOCALAPPDATA%\Programs\Python\Python39
+        ) else if exist "%APPDATA%\Local\Programs\Python\Python39\python.exe" (
+            set PYTHON39_PATH=%APPDATA%\Local\Programs\Python\Python39
+        ) else if exist "C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python39\python.exe" (
+            set PYTHON39_PATH=C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python39
+        ) else (
+            :: Try to find any Python 3.9 installation
+            for /f "tokens=*" %%i in ('where python 2^>nul') do (
+                for /f "tokens=2" %%j in ('"%%i" --version 2^>^&1') do (
+                    echo Found Python: %%i with version %%j
+                    if "%%j"=="3.9.13" (
+                        set PYTHON39_PATH=%%~dpi
+                        goto FoundPython39
+                    )
+                )
+            )
+        )
+        
+        :FoundPython39
+        if defined PYTHON39_PATH (
+            set PATH=%PYTHON39_PATH%;%PYTHON39_PATH%\Scripts;%PATH%
+            "%PYTHON39_PATH%\python.exe" --version >nul 2>nul
+            if !errorlevel! equ 0 (
+                for /f "tokens=2" %%i in ('"%PYTHON39_PATH%\python.exe" --version 2^>^&1') do set INSTALLED_VERSION=%%i
+                echo ✅ Python !INSTALLED_VERSION! found and verified!
+                echo Using Python 3.9 for this project: %PYTHON39_PATH%\python.exe
+                set PYTHON_CMD="%PYTHON39_PATH%\python.exe"
+                goto PythonInstallSuccess
+            )
+        )
+        
+        :: If all methods failed, try interactive installation
+        echo All automatic installation methods failed.
+        echo Attempting interactive installation (you may see a window)...
+        start /wait python-installer.exe
+        
+        :: Final check
+        python --version >nul 2>nul
+        if !errorlevel! equ 0 (
+            for /f "tokens=2" %%i in ('python --version 2^>^&1') do set FINAL_VERSION=%%i
+            echo ✅ Python !FINAL_VERSION! is now available!
+            set PYTHON_CMD=python
+            goto PythonInstallSuccess
+        )
+        
+        :: Complete failure
+        echo ❌ Python 3.9 installation failed completely.
+        echo.
+        echo Troubleshooting steps:
+        echo 1. Run this script as Administrator (Right-click → Run as administrator)
+        echo 2. Temporarily disable antivirus software
+        echo 3. Check if you have sufficient disk space (at least 100MB)
+        echo 4. Manual installation:
+        echo    - Download from: https://www.python.org/downloads/release/python-3913/
+        echo    - Choose "Windows installer (64-bit)" 
+        echo    - Run the installer and check "Add Python to PATH"
+        echo.
         cd ..
         pause
         exit /b 1
@@ -99,6 +163,8 @@ if exist python-installer.exe (
         :: Use the newly installed Python 3.9 for the rest of the script
         set PYTHON_CMD="%PYTHON39_PATH%\python.exe"
     )
+    
+    :PythonInstallSuccess
 ) else (
     echo Failed to download Python installer. Please check:
     echo 1. Your internet connection
