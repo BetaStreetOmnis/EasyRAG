@@ -104,28 +104,6 @@ if os.path.exists(static_dir):
 async def root():
     return RedirectResponse(url="/static/index.html")
 
-@app.get("/health")
-async def health_check():
-    """健康检查端点"""
-    try:
-        # 检查RAG服务是否正常
-        global rag_service
-        if not rag_service:
-            rag_service = RAGService()
-        
-        # 简单的健康检查
-        return {
-            "status": "healthy",
-            "message": "EasyRAG API服务运行正常",
-            "timestamp": time.time(),
-            "service_status": {
-                "rag_service": "running" if rag_service else "not_initialized",
-                "database": "connected"
-            }
-        }
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=f"服务不健康: {str(e)}")
-
 # 初始化RAG服务和文件处理器
 rag_service = None
 document_processor = None
