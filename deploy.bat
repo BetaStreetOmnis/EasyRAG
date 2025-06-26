@@ -34,11 +34,11 @@ if %errorlevel% neq 0 (
         set MINOR=%%b
     )
     
-    if !MAJOR! LSS 3 (
+    if "!MAJOR!" LSS "3" (
         echo Current Python version is too old. Installing Python 3.9...
         goto InstallPython
-    ) else if !MAJOR! EQU 3 (
-        if !MINOR! NEQ 9 (
+    ) else if "!MAJOR!" EQU "3" (
+        if "!MINOR!" NEQ "9" (
             echo Python 3.9 is required for optimal compatibility.
             echo Current version: !PYTHON_VERSION!
             echo Installing Python 3.9...
@@ -70,6 +70,12 @@ echo [Step 1/3] Downloading Python 3.9.13 installer...
 echo This may take a few minutes depending on your internet connection...
 curl -L "https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe" -o python-installer.exe
 
+:: Check if download was successful
+if not exist python-installer.exe (
+    echo Download failed. Trying alternative download method...
+    powershell -Command "Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe' -OutFile 'python-installer.exe'"
+)
+
 if exist python-installer.exe (
     echo [Step 2/3] Download complete! Installing Python 3.9.13...
     echo Installing to: %LOCALAPPDATA%\Programs\Python\Python39
@@ -85,7 +91,7 @@ if exist python-installer.exe (
     :: Check if installation was successful
     echo [Step 3/3] Verifying Python 3.9 installation...
     "%PYTHON39_PATH%\python.exe" --version >nul 2>nul
-    if !errorlevel! neq 0 (
+    if "!errorlevel!" neq "0" (
         echo First installation attempt failed, trying alternative method...
         
         :: Try simpler installation without target directory
@@ -117,7 +123,7 @@ if exist python-installer.exe (
         if defined PYTHON39_PATH (
             set PATH=%PYTHON39_PATH%;%PYTHON39_PATH%\Scripts;%PATH%
             "%PYTHON39_PATH%\python.exe" --version >nul 2>nul
-            if !errorlevel! equ 0 (
+            if "!errorlevel!" equ "0" (
                 for /f "tokens=2" %%i in ('"%PYTHON39_PATH%\python.exe" --version 2^>^&1') do set INSTALLED_VERSION=%%i
                 echo ✅ Python !INSTALLED_VERSION! found and verified!
                 echo Using Python 3.9 for this project: %PYTHON39_PATH%\python.exe
@@ -133,7 +139,7 @@ if exist python-installer.exe (
         
         :: Final check
         python --version >nul 2>nul
-        if !errorlevel! equ 0 (
+        if "!errorlevel!" equ "0" (
             for /f "tokens=2" %%i in ('python --version 2^>^&1') do set FINAL_VERSION=%%i
             echo ✅ Python !FINAL_VERSION! is now available!
             set PYTHON_CMD=python
@@ -202,7 +208,7 @@ if not exist py_env (
 :: Activate virtual environment
 echo Activating virtual environment...
 call py_env\Scripts\activate.bat
-if %errorlevel% neq 0 (
+if "!errorlevel!" neq "0" (
     echo Virtual environment activation failed. Please try manually.
     pause
     exit /b 1
@@ -220,8 +226,8 @@ for /f "tokens=1,2 delims=." %%a in ("!VENV_PYTHON_VERSION!") do (
     set VENV_MINOR=%%b
 )
 
-if !VENV_MAJOR! EQU 3 (
-    if !VENV_MINOR! EQU 9 (
+if "!VENV_MAJOR!" EQU "3" (
+    if "!VENV_MINOR!" EQU "9" (
         echo ✅ Virtual environment is using Python 3.9 correctly!
     ) else (
         echo ⚠️  Warning: Virtual environment is using Python 3.!VENV_MINOR! instead of 3.9
@@ -243,26 +249,26 @@ set PIP_CACHE_DIR=%CD%\pip_cache
 :: Check for NVIDIA GPU
 echo Checking for NVIDIA GPU...
 where nvidia-smi >nul 2>nul
-if %errorlevel% equ 0 (
+if "!errorlevel!" equ "0" (
     echo nvidia-smi command found, checking if driver is working properly...
     nvidia-smi >nul 2>nul
-    if !errorlevel! equ 0 (
+    if "!errorlevel!" equ "0" (
         echo NVIDIA GPU detected, installing GPU dependencies...
         echo Installing base dependencies first...
         python -m pip install --upgrade pip setuptools wheel --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
         
         echo Installing numpy with multiple fallback strategies...
         python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
-        if !errorlevel! neq 0 (
+        if "!errorlevel!" neq "0" (
             echo Aliyun mirror failed, trying Tsinghua mirror...
             python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://pypi.tuna.tsinghua.edu.cn/simple/
-            if !errorlevel! neq 0 (
+            if "!errorlevel!" neq "0" (
                 echo Tsinghua mirror failed, trying official PyPI...
                 python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR%
-                if !errorlevel! neq 0 (
+                if "!errorlevel!" neq "0" (
                     echo Specific version failed, trying latest compatible version...
                     python -m pip install numpy --cache-dir %PIP_CACHE_DIR%
-                    if !errorlevel! neq 0 (
+                    if "!errorlevel!" neq "0" (
                         echo NumPy installation failed completely. Please check your Python environment.
                         pause
                         exit /b 1
@@ -297,7 +303,7 @@ goto EndGPUCheck
 
 :EndGPUCheck
 
-if %errorlevel% neq 0 (
+if "!errorlevel!" neq "0" (
     echo Dependency installation failed. Check your network connection.
     pause
     exit /b 1
