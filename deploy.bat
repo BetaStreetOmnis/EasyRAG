@@ -269,44 +269,85 @@ if not defined PYTHON_CMD (
 :: Enhanced virtual environment setup
 echo [2/6] 🏠 配置虚拟环境...
 if exist py_env (
-    echo 📁 发现现有虚拟环境，检查兼容性...
+    echo 📁 发现现有虚拟环境，检查状态...
     call py_env\Scripts\activate.bat >nul 2>&1
     if "!errorlevel!" equ "0" (
         for /f "tokens=2" %%i in ('python --version 2^>^&1') do set VENV_VERSION=%%i
         echo 现有环境Python版本：!VENV_VERSION!
         
-        echo 是否重新创建虚拟环境以确保最佳兼容性？^(Y/N^)
-        set /p RECREATE_VENV=请选择 ^(默认N^): 
-        if /i "!RECREATE_VENV!"=="Y" (
-            echo 🔄 删除现有虚拟环境...
-            call py_env\Scripts\deactivate.bat >nul 2>&1
-            rmdir /s /q py_env
-            goto CreateNewVenv
+        :: Check if virtual environment is functional
+        python -c "import sys; print('OK')" >nul 2>&1
+        if "!errorlevel!" equ "0" (
+            :: Check Python version compatibility
+            for /f "tokens=1,2 delims=." %%a in ("!VENV_VERSION!") do (
+                set VENV_MAJOR=%%a
+                set VENV_MINOR=%%b
+            )
+            
+            if "!VENV_MAJOR!" EQU "3" (
+                if !VENV_MINOR! GEQ 8 (
+                    echo ✅ 虚拟环境状态良好，版本兼容
+                    
+                    :: Check if core packages are installed
+                    echo 🔍 检查核心依赖包...
+                    set CORE_PACKAGES_OK=true
+                    
+                    python -c "import numpy" >nul 2>&1
+                    if "!errorlevel!" neq "0" set CORE_PACKAGES_OK=false
+                    
+                    python -c "import torch" >nul 2>&1
+                    if "!errorlevel!" neq "0" set CORE_PACKAGES_OK=false
+                    
+                    if "!CORE_PACKAGES_OK!"=="true" (
+                        echo ✅ 核心依赖包已安装，跳过重复安装
+                        set SKIP_PACKAGE_INSTALL=true
+                        goto ActivateVenv
+                    ) else (
+                        echo ⚠️  核心依赖包缺失，需要安装依赖
+                        set SKIP_PACKAGE_INSTALL=false
+                        goto ActivateVenv
+                    )
+                ) else (
+                    echo ⚠️  Python版本过低 ^(!VENV_VERSION! ^< 3.8^)，需要重新创建
+                    goto RecreateVenv
+                )
+            ) else (
+                echo ⚠️  Python版本异常 ^(!VENV_VERSION!^)，需要重新创建
+                goto RecreateVenv
+            )
         ) else (
-            echo ✅ 使用现有虚拟环境
-            goto ActivateVenv
+            echo ❌ 虚拟环境损坏，需要重新创建
+            goto RecreateVenv
         )
     ) else (
-        echo ❌ 现有虚拟环境损坏，将重新创建
-        rmdir /s /q py_env
-        goto CreateNewVenv
+        echo ❌ 虚拟环境激活失败，需要重新创建
+        goto RecreateVenv
     )
 ) else (
-    :CreateNewVenv
-    echo 🔨 创建新的虚拟环境...
-    !PYTHON_CMD! -m venv py_env --upgrade-deps
-    if "!errorlevel!" neq "0" (
-        echo ❌ 虚拟环境创建失败
-        echo 尝试不带升级参数...
-        !PYTHON_CMD! -m venv py_env
-        if "!errorlevel!" neq "0" (
-            echo ❌ 虚拟环境创建完全失败
-            pause
-            exit /b 1
-        )
-    )
-    echo ✅ 虚拟环境创建成功
+    goto CreateNewVenv
 )
+
+:RecreateVenv
+echo 🔄 删除现有虚拟环境...
+call py_env\Scripts\deactivate.bat >nul 2>&1
+rmdir /s /q py_env
+goto CreateNewVenv
+
+:CreateNewVenv
+echo 🔨 创建新的虚拟环境...
+!PYTHON_CMD! -m venv py_env --upgrade-deps
+if "!errorlevel!" neq "0" (
+    echo ❌ 虚拟环境创建失败
+    echo 尝试不带升级参数...
+    !PYTHON_CMD! -m venv py_env
+    if "!errorlevel!" neq "0" (
+        echo ❌ 虚拟环境创建完全失败
+        pause
+        exit /b 1
+    )
+)
+echo ✅ 虚拟环境创建成功
+set SKIP_PACKAGE_INSTALL=false
 
 :ActivateVenv
 echo 🔌 激活虚拟环境...
@@ -339,8 +380,15 @@ if "!VENV_MAJOR!" EQU "3" (
 )
 echo.
 
-:: Enhanced dependency installation
+:: Enhanced dependency installation with smart skip
 echo [3/6] 📦 安装项目依赖...
+
+if "!SKIP_PACKAGE_INSTALL!"=="true" (
+    echo ✅ 依赖包已存在且可用，跳过安装步骤
+    echo 📍 如需重新安装依赖，请删除py_env目录后重新运行脚本
+    goto CreateDirectories
+)
+
 echo 🔧 配置pip环境...
 mkdir pip_cache 2>nul
 set PIP_CACHE_DIR=!CD!\pip_cache
@@ -435,6 +483,7 @@ if "!GPU_SUPPORT!"=="true" (
 echo ✅ 依赖安装完成！
 echo.
 
+:CreateDirectories
 :: Create directories
 echo [4/6] 📁 创建项目目录...
 for %%D in (db models_file temp_files logs) do (
