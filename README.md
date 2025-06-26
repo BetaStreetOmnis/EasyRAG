@@ -1,168 +1,507 @@
-# EasyRAG - 轻量级本地知识库增强系统
+# 🚀 EasyRAG - 轻量级本地知识库增强系统
+
+<div align="center">
+
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.9+-green.svg)](https://python.org)
+[![Docker](https://img.shields.io/badge/Docker-支持-blue.svg)](https://docker.com)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)]()
 
 [中文](README.md) | [English](README_EN.md)
 
-## 项目简介
+</div>
 
-EasyRAG是一个灵活、易用的本地知识库增强问答系统。它集成了先进的检索技术和多样化的大语言模型（LLM），能帮助用户快速构建、查询和管理本地知识库，实现精准、智能的问答体验。系统支持混合搜索、重排序和多种模型切换，所有功能均可在本地部署，确保数据安全与私密性。
+---
 
-## 界面预览
+## 📖 项目简介
 
-### 主界面
+**EasyRAG** 是一个灵活、易用的本地知识库增强问答系统。它集成了先进的检索技术和多样化的大语言模型（LLM），能帮助用户快速构建、查询和管理本地知识库，实现精准、智能的问答体验。
+
+### ✨ 核心特色
+- 🔒 **完全本地部署** - 数据安全与私密性保障
+- 🎯 **混合搜索技术** - 向量检索 + 关键词检索
+- 🤖 **多模型支持** - 本地模型 + API模型
+- 📚 **多格式文档** - PDF、Word、Markdown等
+- 🔄 **一键部署** - Docker/脚本自动化部署
+
+---
+
+## 🖼️ 界面预览
+
+<table>
+<tr>
+<td width="50%">
+
+### 🏠 主界面
 ![主界面](images/main_interface.png)
 
-### 文件上传
+</td>
+<td width="50%">
+
+### 📤 文件上传
 ![文件上传](images/file_upload.png)
 
+</td>
+</tr>
+<tr>
+<td width="50%">
 
-### 知识库检索
+### 🔍 知识库检索
 ![知识库检索](images/search_interface.png)
 
-### 智能对话
+</td>
+<td width="50%">
+
+### 💬 智能对话
 ![智能对话](images/chat_interface.png)
 
-## 主要功能
+</td>
+</tr>
+</table>
 
-- **知识库管理**：支持创建、更新和删除知识库。
-- **多格式文档处理**：支持PDF、Word、Markdown、文本等多种格式，并集成OCR功能识别图片中的文字。
-- **高级检索策略**：
-  - **混合搜索 (Hybrid Search)**：结合向量检索与关键词检索（BM25），提升召回率和准确性。
-  - **重排序 (Reranking)**：集成重排模型，对检索结果进行二次排序，优化答案相关性。
-- **灵活的模型支持**：
-  - **本地大模型**：无缝集成DeepSeek, Qwen, Yi等多种主流开源大模型。
-  - **API模型**：支持通过API密钥调用外部模型服务（如GPT, Claude等）。
-- **智能问答与对话**：
-  - 结合知识库内容生成准确、自然的回答。
-  - 支持上下文感知的多轮对话。
-- **多样化分块策略**：支持多种文档分块方法，包括语义分块、递归字符分块，以及专为技术文档优化的子标题分块。
-- **一键化本地部署**：提供Docker、Windows/Linux脚本等多种部署方式，实现全流程自动化，保障数据安全。
-- **模型参数可调**：在Web界面中开放LLM参数调整，方便用户定制生成效果。
+---
 
-## 系统要求
+## 🎯 主要功能
 
-- 操作系统：Windows/Linux/MacOS
-- **推荐部署方式**：Docker 和 Docker Compose
-- Python版本（手动安装）：Python 3.9+
-- 内存：至少8GB（推荐16GB以上，取决于所用模型大小）
-- 磁盘空间：至少需要10GB可用空间（用于存放模型和知识库）
-- GPU（可选）：支持CUDA的NVIDIA GPU可大幅提升模型推理性能。
+<table>
+<tr>
+<td width="50%">
 
-## 快速开始
+### 📚 知识库管理
+- ✅ 创建、更新和删除知识库
+- 📄 多格式文档处理（PDF、Word、Markdown等）
+- 🖼️ OCR功能识别图片文字
+- 🔄 多样化分块策略
 
-### Docker一键部署 (推荐)
+</td>
+<td width="50%">
 
-1.  确保已安装 [Docker](https://www.docker.com/get-started) 和 [Docker Compose](https://docs.docker.com/compose/install/)。
-2.  在项目根目录下，执行命令：
-    ```bash
-    docker-compose up --build -d
-    ```
-3.  服务启动后，即可在浏览器中访问 `http://localhost:7861`。
+### 🔍 高级检索策略
+- 🎯 **混合搜索** - 向量检索 + BM25关键词检索
+- 🏆 **重排序** - 二次排序优化相关性
+- 📊 可调检索参数
+- 🎛️ 灵活的搜索策略
 
-### 脚本部署
+</td>
+</tr>
+<tr>
+<td width="50%">
 
-#### Windows用户
+### 🤖 灵活的模型支持
+- 🏠 **本地大模型** - DeepSeek, Qwen, Yi等
+- 🌐 **API模型** - GPT, Claude等
+- ⚙️ 模型参数可调
+- 🔄 无缝模型切换
 
-1.  双击`deploy.bat`文件。
-2.  脚本会自动检查Python环境，创建虚拟环境并安装所需依赖。
-3.  自动启动API服务器和Web界面。
+</td>
+<td width="50%">
 
-#### Linux/Unix用户
+### 💬 智能问答与对话
+- 🎯 知识库内容结合生成
+- 🔄 上下文感知多轮对话
+- 📊 检索结果可视化
+- 🎛️ 实时参数调整
 
-1.  打开终端，进入项目目录。
-2.  给脚本添加执行权限：`chmod +x deploy.sh`
-3.  运行脚本：`./deploy.sh`
-4.  脚本会自动检查环境，安装依赖并启动服务。
+</td>
+</tr>
+</table>
 
-### 手动安装
+---
 
-1.  确保安装了Python 3.9或更高版本。
-2.  创建虚拟环境：`python -m venv venv`
-3.  激活虚拟环境：
-    - Windows: `venv\Scripts\activate`
-    - Linux/Mac: `source venv/bin/activate`
-4.  安装依赖：
-    - CPU版本：`pip install -r requirements_cpu.txt`
-    - GPU版本：`pip install -r requirements_gpu.txt`
-5.  启动服务：
-    - API服务器：`python app.py`
-    - Web界面：`python ui_new.py`
+## 💻 系统要求
 
-### 重要说明：Faiss安装
+| 项目 | 要求 | 推荐 |
+|------|------|------|
+| 🖥️ **操作系统** | Windows/Linux/macOS | - |
+| 🐍 **Python版本** | Python 3.9+ | Python 3.10+ |
+| 💾 **内存** | 8GB | 16GB+ |
+| 💿 **磁盘空间** | 10GB | 20GB+ |
+| 🎮 **GPU** | 可选 | NVIDIA GPU (CUDA支持) |
 
-**注意**：对于手动或脚本安装，Faiss向量库可能因编译问题安装失败。Docker部署已包含此依赖。
+---
 
-- CPU版本：`pip install faiss-cpu`
-- GPU版本：`pip install faiss-gpu`
+## 🚀 快速开始
 
-如果安装失败，请参考官方文档或尝试使用预编译包。
+### 📋 部署方式概览
 
-## 使用说明
+<div align="center">
 
-启动服务后，在浏览器中访问以下地址：
+```mermaid
+graph TD
+    A[选择部署方式] --> B[🐳 Docker部署<br/>推荐]
+    A --> C[📜 脚本部署<br/>简单]
+    A --> D[🔧 手动部署<br/>灵活]
+    
+    B --> E[docker-compose up]
+    C --> F[1️⃣ 运行deploy脚本]
+    D --> G[1️⃣ 创建虚拟环境]
+    
+    F --> H[2️⃣ 运行start脚本]
+    G --> I[2️⃣ 安装依赖]
+    
+    H --> J[🌐 访问Web界面]
+    I --> K[3️⃣ 启动服务]
+    E --> J
+    K --> J
+```
 
-- Web界面：`http://localhost:7861`
-- API文档：`http://localhost:8000/docs`
+</div>
 
-### 创建知识库
+---
 
-1.  访问Web界面，选择"知识库管理"选项卡。
-2.  点击"创建知识库"，输入知识库名称，并选择Embedding模型和分块策略。
-3.  上传文档（支持拖拽）或粘贴文本。
-4.  系统会自动处理文档并构建索引。
+### 🐳 方式一：Docker一键部署 (⭐推荐)
 
-### 使用知识库问答
+> 🎯 **最简单、最稳定的部署方式**
 
-1.  选择"知识库对话"选项卡。
-2.  在左侧选择已创建的知识库。
-3.  在右侧选择对话使用的大语言模型，并按需调整检索策略（如混合搜索）和模型参数（如温度）。
-4.  输入问题并发送，系统将生成回答。
+```bash
+# 1️⃣ 确保已安装 Docker 和 Docker Compose
+# 2️⃣ 在项目根目录执行
+docker-compose up --build -d
 
-## 系统架构
+# 3️⃣ 访问服务
+# 浏览器打开：http://localhost:7861
+```
 
-- `docker-compose.yml`：Docker部署配置文件
-- `app.py`：后端FastAPI服务
-- `ui_new.py`：前端Gradio用户界面
-- `core/`：核心功能模块
-  - `kb_doc_process.py`：文档处理与分块模块（含OCR）
-  - `kb_retriever.py`：检索模块（向量、关键词、混合搜索）
-  - `kb_reranker.py`：重排模块
-  - `llm_interface.py`：统一的大语言模型接口（本地与API）
-- `deploy.bat`/`deploy.sh`：自动化部署脚本
+### 📜 方式二：脚本自动部署 (⭐推荐新手)
 
-## 技术细节
+> 🎯 **两步完成：先部署，再启动**
 
-### 模型支持
+#### 🪟 Windows用户
 
-- **Embedding模型**：默认为`bge-m3`，支持切换其他Sentence-Transformer模型，用于将文本向量化。
-- **大语言模型 (LLM)**：默认使用`DeepSeek-Chat-1.5B-Base`，同时支持通过HuggingFace加载`Qwen`, `Yi`等主流开源模型。也支持配置API Key使用外部模型。
-- **重排模型 (Reranker)**：默认使用`bge-reranker-base`，用于在检索后对结果进行精排序，提升精度。
+```cmd
+# 第一步：部署环境
+双击运行 deploy.bat
 
-所有本地模型在首次使用时会自动从网络下载并缓存。
+# 第二步：启动服务  
+双击运行 start.bat
 
-### 检索与分块
+# 或者命令行运行：
+deploy.bat    # 部署
+start.bat     # 启动
+```
 
-- **检索策略**：支持向量检索、关键词检索（BM25）和混合搜索。用户可在对话时灵活选择。
-- **文档分块策略**：系统支持多种文档分块策略，适用于不同类型的文档：
-  - **语义分块**：根据语义边界划分文档，适合一般文本。
-  - **递归字符分块**：基于字符级别的分块，适合非结构化文本。
-  - **Markdown标题分块**：基于Markdown标题的分块。
-  - **子标题分块**：专为技术文档和白皮书设计，按小标题分块同时保留大标题信息，便于精确检索。
+#### 🐧 Linux/macOS用户
 
-## 问题排查
+```bash
+# 第一步：部署环境
+chmod +x deploy.sh start.sh  # 添加执行权限
+./deploy.sh                   # 自动部署
 
-如遇到问题，请检查：
+# 第二步：启动服务
+./start.sh                    # 快速启动
+```
 
-1.  **Docker用户**：检查Docker服务是否正常运行。
-2.  **手动/脚本用户**：
-    - 网络连接是否正常（首次运行需要下载模型）。
-    - 磁盘空间是否充足（至少需要10GB可用空间）。
-    - 查看命令行窗口中的错误信息。
-    - 检查Faiss是否成功安装（`pip list | grep faiss`）。
+### 🔧 方式三：手动部署 (高级用户)
 
-### 常见问题解决方案
+<details>
+<summary>点击展开手动部署步骤</summary>
 
-#### 1. OpenCV依赖错误 (Linux手动安装)
+```bash
+# 1️⃣ 创建虚拟环境
+python -m venv py_env
 
-如果遇到`ImportError: libGL.so.1: cannot open shared object file`错误，说明缺少OpenCV的图形库依赖。
+# 2️⃣ 激活虚拟环境
+# Windows:
+py_env\Scripts\activate
+# Linux/Mac:
+source py_env/bin/activate
 
-**Ubuntu/Debian系统**：
+# 3️⃣ 安装依赖
+# CPU版本：
+pip install -r requirements_cpu.txt
+# GPU版本：
+pip install -r requirements_gpu.txt
+
+# 4️⃣ 启动服务
+python app.py    # API服务器
+python ui_new.py # Web界面 (新终端)
+```
+
+</details>
+
+---
+
+## 🎯 部署流程详解
+
+### 📋 第一步：环境部署 (Deploy)
+
+<table>
+<tr>
+<td width="33%">
+
+#### 🐳 Docker方式
+```bash
+docker-compose up --build -d
+```
+✅ **一键完成**
+- 自动下载镜像
+- 创建容器
+- 启动所有服务
+
+</td>
+<td width="33%">
+
+#### 🪟 Windows脚本
+```cmd
+deploy.bat
+```
+✅ **自动化部署**
+- 检查Python环境
+- 创建虚拟环境
+- 安装所有依赖
+- 下载模型文件
+
+</td>
+<td width="33%">
+
+#### 🐧 Linux/macOS脚本
+```bash
+./deploy.sh
+```
+✅ **智能部署**
+- 环境检测
+- 依赖安装
+- 权限配置
+- 服务准备
+
+</td>
+</tr>
+</table>
+
+### 🚀 第二步：服务启动 (Start)
+
+<table>
+<tr>
+<td width="50%">
+
+#### 🪟 Windows启动
+```cmd
+start.bat
+```
+🎯 **功能特性**
+- 🔌 自动激活虚拟环境
+- 📋 加载环境配置
+- 🚀 启动API服务
+- 🌐 打开Web界面
+
+</td>
+<td width="50%">
+
+#### 🐧 Linux/macOS启动
+```bash
+./start.sh
+```
+🎯 **功能特性**
+- 🔌 自动激活虚拟环境
+- 📋 加载.env配置
+- 🚀 启动知识库系统
+- 🎨 彩色终端输出
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🌐 访问服务
+
+部署完成后，通过以下地址访问：
+
+<div align="center">
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 🌐 **Web界面** | `http://localhost:7861` | 主要操作界面 |
+| 📚 **API文档** | `http://localhost:8000/docs` | 接口文档 |
+| 🔧 **API服务** | `http://localhost:8000` | 后端API |
+
+</div>
+
+---
+
+## 📖 使用说明
+
+### 🏗️ 创建知识库
+
+1. 🌐 访问Web界面 → 📚 "知识库管理"选项卡
+2. ➕ 点击"创建知识库" → 📝 输入名称
+3. ⚙️ 选择Embedding模型和分块策略
+4. 📤 上传文档（支持拖拽）或粘贴文本
+5. ⏳ 系统自动处理并构建索引
+
+### 💬 知识库问答
+
+1. 🌐 选择"知识库对话"选项卡
+2. 📚 左侧选择已创建的知识库
+3. 🤖 右侧选择大语言模型
+4. ⚙️ 调整检索策略和模型参数
+5. 💬 输入问题并获得智能回答
+
+---
+
+## 🏗️ 系统架构
+
+```
+EasyRAG/
+├── 🐳 docker-compose.yml     # Docker部署配置
+├── 🚀 app.py                 # FastAPI后端服务
+├── 🌐 ui_new.py              # Gradio前端界面
+├── 📜 deploy.bat/deploy.sh   # 自动部署脚本
+├── 🚀 start.bat/start.sh     # 快速启动脚本
+├── 📚 core/                  # 核心功能模块
+│   ├── 📄 kb_doc_process.py  # 文档处理与分块
+│   ├── 🔍 kb_retriever.py    # 检索模块
+│   ├── 🏆 kb_reranker.py     # 重排模块
+│   └── 🤖 llm_interface.py   # LLM统一接口
+└── 📋 requirements*.txt      # 依赖文件
+```
+
+---
+
+## 🔧 技术细节
+
+### 🤖 模型支持
+
+<table>
+<tr>
+<td width="33%">
+
+#### 📊 Embedding模型
+- 🎯 **默认**: `bge-m3`
+- 🔄 支持切换其他模型
+- 📈 高质量文本向量化
+- 🚀 自动下载缓存
+
+</td>
+<td width="33%">
+
+#### 🧠 大语言模型
+- 🏠 **本地**: DeepSeek, Qwen, Yi
+- 🌐 **API**: GPT, Claude等
+- ⚙️ 参数实时调整
+- 🔄 无缝模型切换
+
+</td>
+<td width="33%">
+
+#### 🏆 重排模型
+- 🎯 **默认**: `bge-reranker-base`
+- 📈 二次排序优化
+- 🎯 提升检索精度
+- 🚀 自动下载缓存
+
+</td>
+</tr>
+</table>
+
+### 🔍 检索与分块
+
+#### 🎯 检索策略
+- 🔍 **向量检索** - 语义相似度匹配
+- 🔤 **关键词检索** - BM25算法
+- 🎯 **混合搜索** - 结合两种方式
+- 🏆 **重排序** - 精确度优化
+
+#### 📄 分块策略
+- 🧠 **语义分块** - 语义边界划分
+- 🔤 **递归字符分块** - 字符级别分块
+- 📝 **Markdown分块** - 基于标题结构
+- 📚 **子标题分块** - 技术文档优化
+
+---
+
+## 🚨 重要提醒
+
+### ⚠️ Faiss向量库安装
+
+> 📢 **注意**: 手动或脚本安装时，Faiss可能因编译问题失败
+
+```bash
+# CPU版本
+pip install faiss-cpu
+
+# GPU版本  
+pip install faiss-gpu
+```
+
+💡 **解决方案**: Docker部署已包含此依赖，推荐使用Docker方式
+
+---
+
+## 🔧 问题排查
+
+### 🐳 Docker用户
+- ✅ 检查Docker服务状态
+- 🔍 查看容器日志: `docker-compose logs`
+- 🔄 重新构建: `docker-compose up --build`
+
+### 📜 脚本用户
+- 🌐 检查网络连接（下载模型需要）
+- 💿 确保磁盘空间充足（>10GB）
+- 📋 查看命令行错误信息
+- 🔍 验证Faiss安装: `pip list | grep faiss`
+
+### 🔧 常见问题
+
+<details>
+<summary>🐧 Linux OpenCV依赖错误</summary>
+
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install libgl1-mesa-glx libglib2.0-0
+
+# CentOS/RHEL
+sudo yum install mesa-libGL glib2
+```
+
+</details>
+
+<details>
+<summary>🪟 Windows路径问题</summary>
+
+- 确保路径中无中文字符
+- 以管理员权限运行脚本
+- 检查Python路径配置
+
+</details>
+
+<details>
+<summary>🚀 服务启动失败</summary>
+
+- 检查端口占用: `netstat -an | findstr 8000`
+- 查看日志文件
+- 重新运行部署脚本
+
+</details>
+
+---
+
+## 📄 许可证
+
+本项目采用 [MIT License](LICENSE) 许可证。
+
+---
+
+## 🤝 贡献
+
+欢迎提交Issue和Pull Request！
+
+---
+
+## 📞 支持
+
+如有问题，请：
+1. 📋 查看本文档的问题排查部分
+2. 🐛 提交Issue到GitHub
+3. 💬 加入讨论群组
+
+---
+
+<div align="center">
+
+### 🌟 如果这个项目对您有帮助，请给我们一个Star！⭐
+
+**Made with ❤️ by EasyRAG Team**
+
+</div>
