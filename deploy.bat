@@ -23,6 +23,7 @@ echo.
 echo [1/6] Checking Python environment...
 python --version >nul 2>nul
 if %errorlevel% neq 0 (
+    echo Python not found, will install Python 3.9...
     goto InstallPython
 ) else (
     for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
@@ -34,24 +35,30 @@ if %errorlevel% neq 0 (
     )
     
     if !MAJOR! LSS 3 (
-        echo Current Python version is too old.
+        echo Current Python version is too old. Installing Python 3.9...
         goto InstallPython
     ) else if !MAJOR! EQU 3 (
-        if !MINOR! LSS 9 (
-            echo Current Python version is too old.
+        if !MINOR! NEQ 9 (
+            echo Python 3.9 is required for optimal compatibility.
+            echo Current version: !PYTHON_VERSION!
+            echo Installing Python 3.9...
             goto InstallPython
-        ) else if !MINOR! GTR 9 (
-            echo WARNING: Python version higher than 3.9 detected.
-            echo The system is designed for Python 3.9.
-            choice /C YN /M "Do you want to continue anyway"
-            if !errorlevel! equ 2 goto InstallPython
         )
+    ) else (
+        echo Python version is newer than 3.9. Installing Python 3.9 for compatibility...
+        goto InstallPython
     )
 )
 goto ContinueSetup
 
 :InstallPython
-echo Python 3.9 not found, downloading and installing Python 3.9...
+echo.
+echo =======================================================
+echo Installing Python 3.9.13 for optimal compatibility
+echo =======================================================
+echo.
+echo Note: This will install Python 3.9.13 alongside your existing Python installation.
+echo The script will use Python 3.9 for this project while keeping your current Python intact.
 echo.
 
 :: Create temp directory
@@ -59,27 +66,45 @@ mkdir tmp 2>nul
 cd tmp
 
 :: Download Python installer
-echo Downloading Python 3.9.13...
+echo [Step 1/3] Downloading Python 3.9.13 installer...
+echo This may take a few minutes depending on your internet connection...
 curl -L "https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe" -o python-installer.exe
 
 if exist python-installer.exe (
-    echo Download complete, installing Python 3.9...
-    :: Silent install with /quiet parameter, add to PATH
-    start /wait python-installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+    echo [Step 2/3] Download complete! Installing Python 3.9.13...
+    echo Installing to: %LOCALAPPDATA%\Programs\Python\Python39
+    :: Install to a specific directory to avoid conflicts
+    start /wait python-installer.exe /quiet InstallAllUsers=0 TargetDir="%LOCALAPPDATA%\Programs\Python\Python39" PrependPath=0 Include_test=0
+    
+    :: Set Python path for this session
+    set PYTHON39_PATH=%LOCALAPPDATA%\Programs\Python\Python39
+    set PATH=%PYTHON39_PATH%;%PYTHON39_PATH%\Scripts;%PATH%
     
     :: Check if installation was successful
-    python --version >nul 2>nul
+    echo [Step 3/3] Verifying Python 3.9 installation...
+    "%PYTHON39_PATH%\python.exe" --version >nul 2>nul
     if !errorlevel! neq 0 (
-        echo Python installation failed. Please install Python 3.9 manually from:
-        echo https://www.python.org/downloads/release/python-3913/
+        echo Python 3.9 installation failed. Please try the following:
+        echo 1. Run this script as Administrator
+        echo 2. Check your internet connection
+        echo 3. Manually install Python 3.9.13 from: https://www.python.org/downloads/release/python-3913/
         cd ..
         pause
         exit /b 1
     ) else (
-        echo Python 3.9 installed successfully!
+        for /f "tokens=2" %%i in ('"%PYTHON39_PATH%\python.exe" --version 2^>^&1') do set INSTALLED_VERSION=%%i
+        echo ✅ Python !INSTALLED_VERSION! installed successfully!
+        echo Using Python 3.9 for this project: %PYTHON39_PATH%\python.exe
+        
+        :: Use the newly installed Python 3.9 for the rest of the script
+        set PYTHON_CMD="%PYTHON39_PATH%\python.exe"
     )
 ) else (
-    echo Failed to download Python installer. Please check your network connection.
+    echo Failed to download Python installer. Please check:
+    echo 1. Your internet connection
+    echo 2. Firewall settings (curl may be blocked)
+    echo 3. Try running as Administrator
+    echo.
     echo You can manually download Python 3.9.13 from:
     echo https://www.python.org/downloads/release/python-3913/
     cd ..
@@ -89,15 +114,21 @@ if exist python-installer.exe (
 
 cd ..
 rmdir /s /q tmp
+goto ContinueSetup
 
 :ContinueSetup
 echo.
 
+:: Set Python command if not already set (for existing Python installations)
+if not defined PYTHON_CMD (
+    set PYTHON_CMD=python
+)
+
 :: Check and create virtual environment
 echo [2/6] Setting up virtual environment...
 if not exist py_env (
-    echo Creating virtual environment...
-    python -m venv py_env
+    echo Creating virtual environment with Python 3.9...
+    %PYTHON_CMD% -m venv py_env
 ) else (
     echo Virtual environment already exists...
 )
@@ -130,28 +161,7 @@ if %errorlevel% equ 0 (
         echo NVIDIA GPU detected, installing GPU dependencies...
         echo Installing base dependencies first...
         python -m pip install --upgrade pip setuptools wheel --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
-        
-        echo Installing numpy with multiple fallback strategies...
         python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
-        if !errorlevel! neq 0 (
-            echo Aliyun mirror failed, trying Tsinghua mirror...
-            python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://pypi.tuna.tsinghua.edu.cn/simple/
-            if !errorlevel! neq 0 (
-                echo Tsinghua mirror failed, trying official PyPI...
-                python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR%
-                if !errorlevel! neq 0 (
-                    echo Specific version failed, trying latest compatible version...
-                    python -m pip install numpy --cache-dir %PIP_CACHE_DIR%
-                    if !errorlevel! neq 0 (
-                        echo NumPy installation failed completely. Please check your Python environment.
-                        pause
-                        exit /b 1
-                    )
-                )
-            )
-        )
-        echo NumPy installed successfully!
-        
         python -m pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --cache-dir %PIP_CACHE_DIR% -i https://download.pytorch.org/whl/cu121
         echo Installing remaining dependencies...
         pip install -r requirements_gpu.txt --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
@@ -169,28 +179,7 @@ goto EndGPUCheck
 :InstallCPUVersion
 echo Installing base dependencies first...
 python -m pip install --upgrade pip setuptools wheel --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
-
-echo Installing numpy with multiple fallback strategies...
 python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
-if !errorlevel! neq 0 (
-    echo Aliyun mirror failed, trying Tsinghua mirror...
-    python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://pypi.tuna.tsinghua.edu.cn/simple/
-    if !errorlevel! neq 0 (
-        echo Tsinghua mirror failed, trying official PyPI...
-        python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR%
-        if !errorlevel! neq 0 (
-            echo Specific version failed, trying latest compatible version...
-            python -m pip install numpy --cache-dir %PIP_CACHE_DIR%
-            if !errorlevel! neq 0 (
-                echo NumPy installation failed completely. Please check your Python environment.
-                pause
-                exit /b 1
-            )
-        )
-    )
-)
-echo NumPy installed successfully!
-
 python -m pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --cache-dir %PIP_CACHE_DIR% -i https://download.pytorch.org/whl/cpu
 echo Installing remaining dependencies...
 pip install -r requirements_cpu.txt --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
