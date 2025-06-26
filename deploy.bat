@@ -19,19 +19,19 @@ echo 📋 包含：Python环境检测、依赖安装、服务启动
 echo ⚡ 支持：CPU/GPU自动检测、多镜像源、智能重试
 echo.
 echo 系统信息：
-echo - 操作系统：%OS% %PROCESSOR_ARCHITECTURE%
-echo - 用户名：%USERNAME%
-echo - 当前目录：%CD%
+echo - 操作系统：!OS! !PROCESSOR_ARCHITECTURE!
+echo - 用户名：!USERNAME!
+echo - 当前目录：!CD!
 echo.
 echo =======================================================
 echo.
 
 :: Check administrator privileges
 net session >nul 2>&1
-if %errorlevel% equ 0 (
+if "!errorlevel!" equ "0" (
     echo ✅ 管理员权限：已获取
 ) else (
-    echo ⚠️  管理员权限：未获取 (建议以管理员身份运行以获得最佳体验)
+    echo ⚠️  管理员权限：未获取 ^(建议以管理员身份运行以获得最佳体验^)
 )
 echo.
 
@@ -46,7 +46,7 @@ if "!errorlevel!" equ "0" (
 )
 
 echo 检查磁盘空间...
-for /f "tokens=3" %%a in ('dir /-c %SystemDrive%\ 2^>nul ^| find "bytes free"') do set FREE_SPACE=%%a
+for /f "tokens=3" %%a in ('dir /-c !SystemDrive!\ 2^>nul ^| find "bytes free"') do set FREE_SPACE=%%a
 if defined FREE_SPACE (
     echo ✅ 磁盘空间充足
 ) else (
@@ -73,19 +73,19 @@ if "!errorlevel!" neq "0" (
     
     :: Version compatibility check
     if "!MAJOR!" LSS "3" (
-        echo ❌ Python版本过低 (!PYTHON_VERSION! ^< 3.0)，需要安装Python 3.9
+        echo ❌ Python版本过低 ^(!PYTHON_VERSION! ^< 3.0^)，需要安装Python 3.9
         goto InstallPython
     ) else if "!MAJOR!" EQU "3" (
         if "!MINOR!" LSS "8" (
-            echo ❌ Python版本过低 (!PYTHON_VERSION! ^< 3.8)，需要安装Python 3.9
+            echo ❌ Python版本过低 ^(!PYTHON_VERSION! ^< 3.8^)，需要安装Python 3.9
             goto InstallPython
         ) else if "!MINOR!" EQU "9" (
             echo ✅ Python 3.9版本完美匹配！
             goto ContinueSetup
         ) else (
             echo ⚠️  Python版本为 !PYTHON_VERSION!，为了最佳兼容性建议使用3.9
-            echo 是否继续使用当前版本？(Y/N)
-            set /p CONTINUE_CHOICE=请选择 (默认Y): 
+            echo 是否继续使用当前版本？^(Y/N^)
+            set /p CONTINUE_CHOICE=请选择 ^(默认Y^): 
             if /i "!CONTINUE_CHOICE!"=="N" (
                 goto InstallPython
             ) else (
@@ -94,10 +94,10 @@ if "!errorlevel!" neq "0" (
             )
         )
     ) else (
-        echo ⚠️  Python版本为 !PYTHON_VERSION! (^> 4.0)，可能存在兼容性问题
+        echo ⚠️  Python版本为 !PYTHON_VERSION! ^(^> 4.0^)，可能存在兼容性问题
         echo 建议安装Python 3.9以获得最佳兼容性
-        echo 是否安装Python 3.9？(Y/N)
-        set /p INSTALL_CHOICE=请选择 (默认Y): 
+        echo 是否安装Python 3.9？^(Y/N^)
+        set /p INSTALL_CHOICE=请选择 ^(默认Y^): 
         if /i "!INSTALL_CHOICE!"=="N" (
             goto ContinueSetup
         ) else (
@@ -109,7 +109,7 @@ if "!errorlevel!" neq "0" (
 :InstallPython
 echo.
 echo =======================================================
-echo 🔄 安装Python 3.9.13 (企业级稳定版本)
+echo 🔄 安装Python 3.9.13 ^(企业级稳定版本^)
 echo =======================================================
 echo.
 echo 📝 安装说明：
@@ -119,7 +119,7 @@ echo   - 支持多种安装方式和自动重试
 echo.
 
 :: Create temp directory with timestamp
-set TIMESTAMP=%date:~0,4%%date:~5,2%%date:~8,2%_%time:~0,2%%time:~3,2%%time:~6,2%
+set TIMESTAMP=!date:~0,4!!date:~5,2!!date:~8,2!_!time:~0,2!!time:~3,2!!time:~6,2!
 set TIMESTAMP=!TIMESTAMP: =0!
 set TEMP_DIR=tmp_!TIMESTAMP!
 mkdir !TEMP_DIR! 2>nul
@@ -140,7 +140,7 @@ if not exist "!INSTALLER_NAME!" (
 
 if not exist "!INSTALLER_NAME!" (
     echo 方法3: 使用bitsadmin下载...
-    bitsadmin /transfer "PythonDownload" "!PYTHON_URL!" "%CD%\!INSTALLER_NAME!"
+    bitsadmin /transfer "PythonDownload" "!PYTHON_URL!" "!CD!\!INSTALLER_NAME!"
 )
 
 :: Verify download
@@ -165,7 +165,7 @@ if exist "!INSTALLER_NAME!" (
 :: Install Python with multiple strategies
 echo.
 echo [2/4] 🔧 安装Python 3.9.13...
-set PYTHON39_PATH=%LOCALAPPDATA%\Programs\Python\Python39
+set PYTHON39_PATH=!LOCALAPPDATA!\Programs\Python\Python39
 
 echo 策略1: 静默安装到用户目录...
 "!INSTALLER_NAME!" /quiet InstallAllUsers=0 TargetDir="!PYTHON39_PATH!" PrependPath=1 Include_test=0 Include_tcltk=1 Include_pip=1 Include_doc=0
@@ -202,9 +202,9 @@ if exist "!PYTHON39_PATH!\python.exe" (
     set PYTHON39_PATH=
     
     for %%P in (
-        "%LOCALAPPDATA%\Programs\Python\Python39"
-        "%APPDATA%\Local\Programs\Python\Python39"
-        "C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python39"
+        "!LOCALAPPDATA!\Programs\Python\Python39"
+        "!APPDATA!\Local\Programs\Python\Python39"
+        "C:\Users\!USERNAME!\AppData\Local\Programs\Python\Python39"
         "C:\Python39"
         "C:\Program Files\Python39"
         "C:\Program Files (x86)\Python39"
@@ -240,10 +240,10 @@ if exist "!PYTHON39_PATH!\python.exe" (
         echo 🔧 故障排除建议：
         echo 1. 以管理员身份运行此脚本
         echo 2. 临时关闭杀毒软件
-        echo 3. 检查磁盘空间 (需要至少500MB)
+        echo 3. 检查磁盘空间 ^(需要至少500MB^)
         echo 4. 手动安装：
         echo    下载：https://www.python.org/downloads/release/python-3913/
-        echo    选择：Windows installer (64-bit)
+        echo    选择：Windows installer ^(64-bit^)
         echo    安装时勾选：Add Python to PATH
         echo.
         cd ..
@@ -275,8 +275,8 @@ if exist py_env (
         for /f "tokens=2" %%i in ('python --version 2^>^&1') do set VENV_VERSION=%%i
         echo 现有环境Python版本：!VENV_VERSION!
         
-        echo 是否重新创建虚拟环境以确保最佳兼容性？(Y/N)
-        set /p RECREATE_VENV=请选择 (默认N): 
+        echo 是否重新创建虚拟环境以确保最佳兼容性？^(Y/N^)
+        set /p RECREATE_VENV=请选择 ^(默认N^): 
         if /i "!RECREATE_VENV!"=="Y" (
             echo 🔄 删除现有虚拟环境...
             call py_env\Scripts\deactivate.bat >nul 2>&1
@@ -343,11 +343,11 @@ echo.
 echo [3/6] 📦 安装项目依赖...
 echo 🔧 配置pip环境...
 mkdir pip_cache 2>nul
-set PIP_CACHE_DIR=%CD%\pip_cache
+set PIP_CACHE_DIR=!CD!\pip_cache
 
 :: Upgrade pip first
 echo 升级pip到最新版本...
-python -m pip install --upgrade pip --cache-dir "%PIP_CACHE_DIR%" --timeout 60
+python -m pip install --upgrade pip --cache-dir "!PIP_CACHE_DIR!" --timeout 60
 
 :: Configure pip mirrors
 echo 配置pip镜像源...
@@ -461,7 +461,7 @@ if exist config.py (
 echo [6/6] 🔍 系统就绪检查...
 echo 检查关键文件...
 set MISSING_FILES=
-for %%F in (app.py ui.py main.py) do (
+for %%F in (app.py main.py) do (
     if not exist %%F (
         set MISSING_FILES=!MISSING_FILES! %%F
     )
@@ -483,46 +483,42 @@ echo 🚀 启动EasyRAG知识库系统
 echo =======================================================
 echo.
 echo 📋 服务信息：
-echo   - API服务端口：8028
-echo   - Web界面端口：7861
+echo   - 统一服务端口：8028 ^(包含API和Web界面^)
 echo   - GPU支持：!GPU_SUPPORT!
 echo   - Python版本：!VENV_PYTHON_VERSION!
 echo.
 
-set VENV_ACTIVATE=%CD%\py_env\Scripts\activate.bat
+set VENV_ACTIVATE=!CD!\py_env\Scripts\activate.bat
 
-echo 🔄 启动API服务器...
-start "EasyRAG API Server" cmd /k "title EasyRAG API Server && call %VENV_ACTIVATE% && echo 🚀 启动API服务器... && python app.py"
+echo 🔄 启动EasyRAG服务...
+start "EasyRAG Service" cmd /k "title EasyRAG Knowledge Base System && call !VENV_ACTIVATE! && echo 🚀 启动EasyRAG知识库系统... && python app.py"
 
-echo ⏳ 等待API服务器启动...
+echo ⏳ 等待服务启动...
 timeout /t 8 /nobreak > nul
-
-echo 🔄 启动Web界面...
-start "EasyRAG Web UI" cmd /k "title EasyRAG Web Interface && call %VENV_ACTIVATE% && echo 🌐 启动Web界面... && python ui.py"
 
 echo.
 echo ✅ EasyRAG知识库系统启动完成！
 echo.
 echo 🌐 访问地址：
-echo   - Web界面：http://localhost:7861
-echo   - API接口：http://localhost:8028
+echo   - 系统界面：http://localhost:8028
 echo.
 echo 📝 使用说明：
-echo   - 两个新的命令行窗口已打开（API服务器和Web界面）
-echo   - 在Web界面中可以上传文档、创建知识库、进行问答
-echo   - 按Ctrl+C可以停止相应的服务
-echo   - 所有服务都运行在Python 3.9虚拟环境中
+echo   - 新的命令行窗口已打开^(EasyRAG服务^)
+echo   - 在浏览器中访问 http://localhost:8028 使用系统
+echo   - 可以上传文档、创建知识库、进行问答
+echo   - 按Ctrl+C可以停止服务
+echo   - 服务运行在Python虚拟环境中
 echo.
 echo 🎉 部署完成！祝您使用愉快！
 echo.
 
 :: Open browser automatically
-echo 是否自动打开浏览器访问Web界面？(Y/N)
-set /p OPEN_BROWSER=请选择 (默认Y): 
+echo 是否自动打开浏览器访问系统界面？^(Y/N^)
+set /p OPEN_BROWSER=请选择 ^(默认Y^): 
 if /i not "!OPEN_BROWSER!"=="N" (
     echo 🌐 正在打开浏览器...
     timeout /t 3 /nobreak > nul
-    start http://localhost:7861
+    start http://localhost:8028
 )
 
 pause
@@ -532,58 +528,58 @@ goto :eof
 :InstallPackageWithRetry
 set PACKAGE=%~1
 set DESCRIPTION=%~2
-echo 安装 %DESCRIPTION% (%PACKAGE%)...
+echo 安装 !DESCRIPTION! ^(!PACKAGE!^)...
 
 for /L %%i in (0,1,3) do (
     if %%i equ 0 (
-        python -m pip install %PACKAGE% --cache-dir "%PIP_CACHE_DIR%" -i !MIRRORS[%%i]! --timeout 60
+        python -m pip install !PACKAGE! --cache-dir "!PIP_CACHE_DIR!" -i !MIRRORS[%%i]! --timeout 60
     ) else (
         echo 重试 %%i/3 - 使用镜像源 %%i...
-        python -m pip install %PACKAGE% --cache-dir "%PIP_CACHE_DIR%" -i !MIRRORS[%%i]! --timeout 60
+        python -m pip install !PACKAGE! --cache-dir "!PIP_CACHE_DIR!" -i !MIRRORS[%%i]! --timeout 60
     )
     
     if "!errorlevel!" equ "0" (
-        echo ✅ %DESCRIPTION% 安装成功
+        echo ✅ !DESCRIPTION! 安装成功
         goto :eof
     )
 )
 
-echo ❌ %DESCRIPTION% 安装失败
+echo ❌ !DESCRIPTION! 安装失败
 pause
 exit /b 1
 
 :InstallRequirementsWithRetry
 set REQ_FILE=%~1
 set DESCRIPTION=%~2
-echo 安装 %DESCRIPTION% (%REQ_FILE%)...
+echo 安装 !DESCRIPTION! ^(!REQ_FILE!^)...
 
 for /L %%i in (0,1,3) do (
     if %%i equ 0 (
-        python -m pip install -r %REQ_FILE% --cache-dir "%PIP_CACHE_DIR%" -i !MIRRORS[%%i]! --timeout 60
+        python -m pip install -r !REQ_FILE! --cache-dir "!PIP_CACHE_DIR!" -i !MIRRORS[%%i]! --timeout 60
     ) else (
         echo 重试 %%i/3 - 使用镜像源 %%i...
-        python -m pip install -r %REQ_FILE% --cache-dir "%PIP_CACHE_DIR%" -i !MIRRORS[%%i]! --timeout 60
+        python -m pip install -r !REQ_FILE! --cache-dir "!PIP_CACHE_DIR!" -i !MIRRORS[%%i]! --timeout 60
     )
     
     if "!errorlevel!" equ "0" (
-        echo ✅ %DESCRIPTION% 安装成功
+        echo ✅ !DESCRIPTION! 安装成功
         goto :eof
     )
 )
 
-echo ❌ %DESCRIPTION% 安装失败
+echo ❌ !DESCRIPTION! 安装失败
 pause
 exit /b 1
 
 :InstallPackageOptional
 set PACKAGE=%~1
 set DESCRIPTION=%~2
-echo 尝试安装 %DESCRIPTION% (%PACKAGE%)...
+echo 尝试安装 !DESCRIPTION! ^(!PACKAGE!^)...
 
-python -m pip install %PACKAGE% --cache-dir "%PIP_CACHE_DIR%" -i !MIRRORS[0]! --timeout 60 >nul 2>&1
+python -m pip install !PACKAGE! --cache-dir "!PIP_CACHE_DIR!" -i !MIRRORS[0]! --timeout 60 >nul 2>&1
 if "!errorlevel!" equ "0" (
-    echo ✅ %DESCRIPTION% 安装成功
+    echo ✅ !DESCRIPTION! 安装成功
 ) else (
-    echo ⚠️  %DESCRIPTION% 安装失败（可选包，不影响基本功能）
+    echo ⚠️  !DESCRIPTION! 安装失败^(可选包，不影响基本功能^)
 )
 goto :eof 
