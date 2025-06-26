@@ -101,9 +101,9 @@ graph LR
 </td>
 <td width="50%">
 
-### 📊 API文档
+<!-- ### 📊 API文档
 ![API文档](images/api_docs.png)
-*完整的RESTful API接口*
+*完整的RESTful API接口* -->
 
 </td>
 </tr>
