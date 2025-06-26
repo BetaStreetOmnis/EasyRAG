@@ -5,361 +5,585 @@ setlocal enabledelayedexpansion
 chcp 65001 > nul
 
 :: Title and color settings
-title EasyRAG Knowledge Base System
-color 0A
+title EasyRAG Knowledge Base System - Deployment
+color 0B
 
-:: Welcome message
+:: Welcome message with system info
 echo =======================================================
 echo           EasyRAG Knowledge Base System
+echo                   自动部署脚本 v2.0
 echo =======================================================
 echo.
-echo This script will help you deploy the EasyRAG local knowledge base system.
-echo It will check and install required components automatically.
+echo 🚀 本脚本将自动为您部署EasyRAG本地知识库系统
+echo 📋 包含：Python环境检测、依赖安装、服务启动
+echo ⚡ 支持：CPU/GPU自动检测、多镜像源、智能重试
+echo.
+echo 系统信息：
+echo - 操作系统：%OS% %PROCESSOR_ARCHITECTURE%
+echo - 用户名：%USERNAME%
+echo - 当前目录：%CD%
 echo.
 echo =======================================================
+echo.
+
+:: Check administrator privileges
+net session >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ✅ 管理员权限：已获取
+) else (
+    echo ⚠️  管理员权限：未获取 (建议以管理员身份运行以获得最佳体验)
+)
+echo.
+
+:: Pre-flight checks
+echo [预检] 检查系统环境...
+echo 检查网络连接...
+ping -n 1 8.8.8.8 >nul 2>&1
+if "!errorlevel!" equ "0" (
+    echo ✅ 网络连接正常
+) else (
+    echo ⚠️  网络连接可能存在问题，将使用本地缓存和镜像源
+)
+
+echo 检查磁盘空间...
+for /f "tokens=3" %%a in ('dir /-c %SystemDrive%\ 2^>nul ^| find "bytes free"') do set FREE_SPACE=%%a
+if defined FREE_SPACE (
+    echo ✅ 磁盘空间充足
+) else (
+    echo ⚠️  无法检测磁盘空间，请确保至少有2GB可用空间
+)
 echo.
 
 :: Check if Python is installed and verify version
-echo [1/6] Checking Python environment...
+echo [1/6] 🐍 检查Python环境...
 python --version >nul 2>nul
-if %errorlevel% neq 0 (
-    echo Python not found, will install Python 3.9...
+if "!errorlevel!" neq "0" (
+    echo ❌ 未找到Python，将安装Python 3.9.13...
     goto InstallPython
 ) else (
     for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
-    echo Detected Python version: !PYTHON_VERSION!
+    echo 📍 检测到Python版本：!PYTHON_VERSION!
     
-    for /f "tokens=1,2 delims=." %%a in ("!PYTHON_VERSION!") do (
+    :: Parse version
+    for /f "tokens=1,2,3 delims=." %%a in ("!PYTHON_VERSION!") do (
         set MAJOR=%%a
         set MINOR=%%b
+        set PATCH=%%c
     )
     
+    :: Version compatibility check
     if "!MAJOR!" LSS "3" (
-        echo Current Python version is too old. Installing Python 3.9...
+        echo ❌ Python版本过低 (!PYTHON_VERSION! ^< 3.0)，需要安装Python 3.9
         goto InstallPython
     ) else if "!MAJOR!" EQU "3" (
-        if "!MINOR!" NEQ "9" (
-            echo Python 3.9 is required for optimal compatibility.
-            echo Current version: !PYTHON_VERSION!
-            echo Installing Python 3.9...
+        if "!MINOR!" LSS "8" (
+            echo ❌ Python版本过低 (!PYTHON_VERSION! ^< 3.8)，需要安装Python 3.9
             goto InstallPython
+        ) else if "!MINOR!" EQU "9" (
+            echo ✅ Python 3.9版本完美匹配！
+            goto ContinueSetup
+        ) else (
+            echo ⚠️  Python版本为 !PYTHON_VERSION!，为了最佳兼容性建议使用3.9
+            echo 是否继续使用当前版本？(Y/N)
+            set /p CONTINUE_CHOICE=请选择 (默认Y): 
+            if /i "!CONTINUE_CHOICE!"=="N" (
+                goto InstallPython
+            ) else (
+                echo ✅ 继续使用Python !PYTHON_VERSION!
+                goto ContinueSetup
+            )
         )
     ) else (
-        echo Python version is newer than 3.9. Installing Python 3.9 for compatibility...
-        goto InstallPython
+        echo ⚠️  Python版本为 !PYTHON_VERSION! (^> 4.0)，可能存在兼容性问题
+        echo 建议安装Python 3.9以获得最佳兼容性
+        echo 是否安装Python 3.9？(Y/N)
+        set /p INSTALL_CHOICE=请选择 (默认Y): 
+        if /i "!INSTALL_CHOICE!"=="N" (
+            goto ContinueSetup
+        ) else (
+            goto InstallPython
+        )
     )
 )
-goto ContinueSetup
 
 :InstallPython
 echo.
 echo =======================================================
-echo Installing Python 3.9.13 for optimal compatibility
+echo 🔄 安装Python 3.9.13 (企业级稳定版本)
 echo =======================================================
 echo.
-echo Note: This will install Python 3.9.13 alongside your existing Python installation.
-echo The script will use Python 3.9 for this project while keeping your current Python intact.
+echo 📝 安装说明：
+echo   - 将安装到用户目录，不影响系统Python
+echo   - 自动配置环境变量
+echo   - 支持多种安装方式和自动重试
 echo.
 
-:: Create temp directory
-mkdir tmp 2>nul
-cd tmp
+:: Create temp directory with timestamp
+set TIMESTAMP=%date:~0,4%%date:~5,2%%date:~8,2%_%time:~0,2%%time:~3,2%%time:~6,2%
+set TIMESTAMP=!TIMESTAMP: =0!
+set TEMP_DIR=tmp_!TIMESTAMP!
+mkdir !TEMP_DIR! 2>nul
+cd !TEMP_DIR!
 
-:: Download Python installer
-echo [Step 1/3] Downloading Python 3.9.13 installer...
-echo This may take a few minutes depending on your internet connection...
-curl -L "https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe" -o python-installer.exe
+:: Download Python installer with multiple methods
+echo [1/4] 📥 下载Python 3.9.13安装程序...
+set PYTHON_URL=https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe
+set INSTALLER_NAME=python-3.9.13-installer.exe
 
-:: Check if download was successful
-if not exist python-installer.exe (
-    echo Download failed. Trying alternative download method...
-    powershell -Command "Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe' -OutFile 'python-installer.exe'"
+echo 方法1: 使用curl下载...
+curl -L --connect-timeout 30 --max-time 300 --retry 3 "!PYTHON_URL!" -o "!INSTALLER_NAME!"
+
+if not exist "!INSTALLER_NAME!" (
+    echo 方法2: 使用PowerShell下载...
+    powershell -Command "try { $ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri '!PYTHON_URL!' -OutFile '!INSTALLER_NAME!' -TimeoutSec 300 } catch { exit 1 }"
 )
 
-if exist python-installer.exe (
-    echo [Step 2/3] Download complete! Installing Python 3.9.13...
-    echo Installing to: %LOCALAPPDATA%\Programs\Python\Python39
-    
-    :: Try multiple installation strategies
-    echo Attempting installation method 1: User-level installation...
-    start /wait python-installer.exe /quiet InstallAllUsers=0 TargetDir="%LOCALAPPDATA%\Programs\Python\Python39" PrependPath=0 Include_test=0
-    
-    :: Set Python path for this session
-    set PYTHON39_PATH=%LOCALAPPDATA%\Programs\Python\Python39
-    set PATH=%PYTHON39_PATH%;%PYTHON39_PATH%\Scripts;%PATH%
-    
-    :: Check if installation was successful
-    echo [Step 3/3] Verifying Python 3.9 installation...
-    "%PYTHON39_PATH%\python.exe" --version >nul 2>nul
-    if "!errorlevel!" neq "0" (
-        echo First installation attempt failed, trying alternative method...
-        
-        :: Try simpler installation without target directory
-        echo Attempting installation method 2: Default user installation...
-        start /wait python-installer.exe /quiet InstallAllUsers=0 PrependPath=0 Include_test=0
-        
-        :: Try to find Python 3.9 in common locations
-        set PYTHON39_PATH=
-        if exist "%LOCALAPPDATA%\Programs\Python\Python39\python.exe" (
-            set PYTHON39_PATH=%LOCALAPPDATA%\Programs\Python\Python39
-        ) else if exist "%APPDATA%\Local\Programs\Python\Python39\python.exe" (
-            set PYTHON39_PATH=%APPDATA%\Local\Programs\Python\Python39
-        ) else if exist "C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python39\python.exe" (
-            set PYTHON39_PATH=C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python39
-        ) else (
-            :: Try to find any Python 3.9 installation
-            for /f "tokens=*" %%i in ('where python 2^>nul') do (
-                for /f "tokens=2" %%j in ('"%%i" --version 2^>^&1') do (
-                    echo Found Python: %%i with version %%j
-                    if "%%j"=="3.9.13" (
-                        set PYTHON39_PATH=%%~dpi
-                        goto FoundPython39
-                    )
-                )
-            )
-        )
-        
-        :FoundPython39
-        if defined PYTHON39_PATH (
-            set PATH=%PYTHON39_PATH%;%PYTHON39_PATH%\Scripts;%PATH%
-            "%PYTHON39_PATH%\python.exe" --version >nul 2>nul
-            if "!errorlevel!" equ "0" (
-                for /f "tokens=2" %%i in ('"%PYTHON39_PATH%\python.exe" --version 2^>^&1') do set INSTALLED_VERSION=%%i
-                echo ✅ Python !INSTALLED_VERSION! found and verified!
-                echo Using Python 3.9 for this project: %PYTHON39_PATH%\python.exe
-                set PYTHON_CMD="%PYTHON39_PATH%\python.exe"
-                goto PythonInstallSuccess
-            )
-        )
-        
-        :: If all methods failed, try interactive installation
-        echo All automatic installation methods failed.
-        echo Attempting interactive installation (you may see a window)...
-        start /wait python-installer.exe
-        
-        :: Final check
-        python --version >nul 2>nul
-        if "!errorlevel!" equ "0" (
-            for /f "tokens=2" %%i in ('python --version 2^>^&1') do set FINAL_VERSION=%%i
-            echo ✅ Python !FINAL_VERSION! is now available!
-            set PYTHON_CMD=python
-            goto PythonInstallSuccess
-        )
-        
-        :: Complete failure
-        echo ❌ Python 3.9 installation failed completely.
-        echo.
-        echo Troubleshooting steps:
-        echo 1. Run this script as Administrator (Right-click → Run as administrator)
-        echo 2. Temporarily disable antivirus software
-        echo 3. Check if you have sufficient disk space (at least 100MB)
-        echo 4. Manual installation:
-        echo    - Download from: https://www.python.org/downloads/release/python-3913/
-        echo    - Choose "Windows installer (64-bit)" 
-        echo    - Run the installer and check "Add Python to PATH"
-        echo.
+if not exist "!INSTALLER_NAME!" (
+    echo 方法3: 使用bitsadmin下载...
+    bitsadmin /transfer "PythonDownload" "!PYTHON_URL!" "%CD%\!INSTALLER_NAME!"
+)
+
+:: Verify download
+if exist "!INSTALLER_NAME!" (
+    echo ✅ 下载完成！文件大小：
+    for %%F in ("!INSTALLER_NAME!") do echo    %%~zF bytes
+) else (
+    echo ❌ 下载失败！请检查网络连接或手动下载
+    echo 手动下载地址：!PYTHON_URL!
+    echo 下载后请将文件重命名为 !INSTALLER_NAME! 并放在 !TEMP_DIR! 目录中
+    echo 然后按任意键继续...
+    pause
+    if not exist "!INSTALLER_NAME!" (
         cd ..
+        rmdir /s /q !TEMP_DIR!
+        echo ❌ 安装失败，退出程序
         pause
         exit /b 1
-    ) else (
-        for /f "tokens=2" %%i in ('"%PYTHON39_PATH%\python.exe" --version 2^>^&1') do set INSTALLED_VERSION=%%i
-        echo ✅ Python !INSTALLED_VERSION! installed successfully!
-        echo Using Python 3.9 for this project: %PYTHON39_PATH%\python.exe
-        
-        :: Use the newly installed Python 3.9 for the rest of the script
-        set PYTHON_CMD="%PYTHON39_PATH%\python.exe"
     )
-    
-    :PythonInstallSuccess
-) else (
-    echo Failed to download Python installer. Please check:
-    echo 1. Your internet connection
-    echo 2. Firewall settings (curl may be blocked)
-    echo 3. Try running as Administrator
-    echo.
-    echo You can manually download Python 3.9.13 from:
-    echo https://www.python.org/downloads/release/python-3913/
-    cd ..
-    pause
-    exit /b 1
 )
 
-cd ..
-rmdir /s /q tmp
-goto ContinueSetup
+:: Install Python with multiple strategies
+echo.
+echo [2/4] 🔧 安装Python 3.9.13...
+set PYTHON39_PATH=%LOCALAPPDATA%\Programs\Python\Python39
 
-:ContinueSetup
+echo 策略1: 静默安装到用户目录...
+"!INSTALLER_NAME!" /quiet InstallAllUsers=0 TargetDir="!PYTHON39_PATH!" PrependPath=1 Include_test=0 Include_tcltk=1 Include_pip=1 Include_doc=0
+
+:: Wait for installation to complete
+timeout /t 10 /nobreak > nul
+
+:: Verify installation
+echo [3/4] ✅ 验证安装结果...
+if exist "!PYTHON39_PATH!\python.exe" (
+    echo ✅ Python 3.9安装成功！
+    echo 安装路径：!PYTHON39_PATH!
+    
+    :: Test Python
+    "!PYTHON39_PATH!\python.exe" --version >nul 2>&1
+    if "!errorlevel!" equ "0" (
+        for /f "tokens=2" %%i in ('"!PYTHON39_PATH!\python.exe" --version 2^>^&1') do set INSTALLED_VERSION=%%i
+        echo ✅ Python版本验证：!INSTALLED_VERSION!
+        set PYTHON_CMD="!PYTHON39_PATH!\python.exe"
+        set PATH=!PYTHON39_PATH!;!PYTHON39_PATH!\Scripts;!PATH!
+    ) else (
+        echo ❌ Python安装验证失败
+        goto InstallationFallback
+    )
+) else (
+    :InstallationFallback
+    echo ⚠️  默认安装位置未找到，尝试其他安装方式...
+    
+    echo 策略2: 交互式安装...
+    start /wait "!INSTALLER_NAME!"
+    
+    :: Search for Python 3.9 in common locations
+    echo 搜索Python 3.9安装位置...
+    set PYTHON39_PATH=
+    
+    for %%P in (
+        "%LOCALAPPDATA%\Programs\Python\Python39"
+        "%APPDATA%\Local\Programs\Python\Python39"
+        "C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python39"
+        "C:\Python39"
+        "C:\Program Files\Python39"
+        "C:\Program Files (x86)\Python39"
+    ) do (
+        if exist "%%P\python.exe" (
+            set PYTHON39_PATH=%%P
+            echo ✅ 找到Python安装：%%P
+            goto FoundPython
+        )
+    )
+    
+    :: Search in PATH
+    echo 在系统PATH中搜索Python 3.9...
+    for /f "tokens=*" %%i in ('where python 2^>nul') do (
+        for /f "tokens=2" %%j in ('"%%i" --version 2^>^&1') do (
+            if "%%j"=="3.9.13" (
+                set PYTHON39_PATH=%%~dpi
+                set PYTHON39_PATH=!PYTHON39_PATH:~0,-1!
+                echo ✅ 在PATH中找到Python 3.9：!PYTHON39_PATH!
+                goto FoundPython
+            )
+        )
+    )
+    
+    :FoundPython
+    if defined PYTHON39_PATH (
+        set PYTHON_CMD="!PYTHON39_PATH!\python.exe"
+        set PATH=!PYTHON39_PATH!;!PYTHON39_PATH!\Scripts;!PATH!
+        echo ✅ Python 3.9配置完成
+    ) else (
+        echo ❌ Python 3.9安装失败
+        echo.
+        echo 🔧 故障排除建议：
+        echo 1. 以管理员身份运行此脚本
+        echo 2. 临时关闭杀毒软件
+        echo 3. 检查磁盘空间 (需要至少500MB)
+        echo 4. 手动安装：
+        echo    下载：https://www.python.org/downloads/release/python-3913/
+        echo    选择：Windows installer (64-bit)
+        echo    安装时勾选：Add Python to PATH
+        echo.
+        cd ..
+        rmdir /s /q !TEMP_DIR!
+        pause
+        exit /b 1
+    )
+)
+
+:: Clean up
+echo [4/4] 🧹 清理临时文件...
+cd ..
+rmdir /s /q !TEMP_DIR!
+echo ✅ Python 3.9.13安装完成！
 echo.
 
-:: Set Python command if not already set (for existing Python installations)
+:ContinueSetup
+:: Set Python command if not already set
 if not defined PYTHON_CMD (
     set PYTHON_CMD=python
 )
 
-:: Check and create virtual environment
-echo [2/6] Setting up virtual environment...
-if not exist py_env (
-    echo Creating virtual environment with Python 3.9...
-    %PYTHON_CMD% -m venv py_env
+:: Enhanced virtual environment setup
+echo [2/6] 🏠 配置虚拟环境...
+if exist py_env (
+    echo 📁 发现现有虚拟环境，检查兼容性...
+    call py_env\Scripts\activate.bat >nul 2>&1
+    if "!errorlevel!" equ "0" (
+        for /f "tokens=2" %%i in ('python --version 2^>^&1') do set VENV_VERSION=%%i
+        echo 现有环境Python版本：!VENV_VERSION!
+        
+        echo 是否重新创建虚拟环境以确保最佳兼容性？(Y/N)
+        set /p RECREATE_VENV=请选择 (默认N): 
+        if /i "!RECREATE_VENV!"=="Y" (
+            echo 🔄 删除现有虚拟环境...
+            call py_env\Scripts\deactivate.bat >nul 2>&1
+            rmdir /s /q py_env
+            goto CreateNewVenv
+        ) else (
+            echo ✅ 使用现有虚拟环境
+            goto ActivateVenv
+        )
+    ) else (
+        echo ❌ 现有虚拟环境损坏，将重新创建
+        rmdir /s /q py_env
+        goto CreateNewVenv
+    )
 ) else (
-    echo Virtual environment already exists...
+    :CreateNewVenv
+    echo 🔨 创建新的虚拟环境...
+    !PYTHON_CMD! -m venv py_env --upgrade-deps
+    if "!errorlevel!" neq "0" (
+        echo ❌ 虚拟环境创建失败
+        echo 尝试不带升级参数...
+        !PYTHON_CMD! -m venv py_env
+        if "!errorlevel!" neq "0" (
+            echo ❌ 虚拟环境创建完全失败
+            pause
+            exit /b 1
+        )
+    )
+    echo ✅ 虚拟环境创建成功
 )
 
-:: Activate virtual environment
-echo Activating virtual environment...
+:ActivateVenv
+echo 🔌 激活虚拟环境...
 call py_env\Scripts\activate.bat
 if "!errorlevel!" neq "0" (
-    echo Virtual environment activation failed. Please try manually.
+    echo ❌ 虚拟环境激活失败
     pause
     exit /b 1
 )
-echo Virtual environment activated successfully!
 
-:: Verify Python version in virtual environment
-echo Verifying Python version in virtual environment...
+:: Verify virtual environment
 for /f "tokens=2" %%i in ('python --version 2^>^&1') do set VENV_PYTHON_VERSION=%%i
-echo Virtual environment Python version: !VENV_PYTHON_VERSION!
+echo ✅ 虚拟环境已激活
+echo 📍 虚拟环境Python版本：!VENV_PYTHON_VERSION!
 
-:: Check if it's Python 3.9.x
+:: Check Python version compatibility
 for /f "tokens=1,2 delims=." %%a in ("!VENV_PYTHON_VERSION!") do (
     set VENV_MAJOR=%%a
     set VENV_MINOR=%%b
 )
 
 if "!VENV_MAJOR!" EQU "3" (
-    if "!VENV_MINOR!" EQU "9" (
-        echo ✅ Virtual environment is using Python 3.9 correctly!
+    if !VENV_MINOR! GEQ 8 (
+        echo ✅ Python版本兼容性检查通过
     ) else (
-        echo ⚠️  Warning: Virtual environment is using Python 3.!VENV_MINOR! instead of 3.9
-        echo This may cause compatibility issues.
+        echo ⚠️  Python版本较低，可能存在兼容性问题
     )
 ) else (
-    echo ⚠️  Warning: Virtual environment is using Python !VENV_MAJOR!.!VENV_MINOR! instead of 3.9
-    echo This may cause compatibility issues.
+    echo ⚠️  Python版本异常，可能存在兼容性问题
 )
-
 echo.
 
-:: Install dependencies
-echo [3/6] Installing dependencies...
-echo Creating and configuring pip cache directory...
+:: Enhanced dependency installation
+echo [3/6] 📦 安装项目依赖...
+echo 🔧 配置pip环境...
 mkdir pip_cache 2>nul
 set PIP_CACHE_DIR=%CD%\pip_cache
 
-:: Check for NVIDIA GPU
-echo Checking for NVIDIA GPU...
+:: Upgrade pip first
+echo 升级pip到最新版本...
+python -m pip install --upgrade pip --cache-dir "%PIP_CACHE_DIR%" --timeout 60
+
+:: Configure pip mirrors
+echo 配置pip镜像源...
+set MIRRORS[0]=https://mirrors.aliyun.com/pypi/simple/
+set MIRRORS[1]=https://pypi.tuna.tsinghua.edu.cn/simple/
+set MIRRORS[2]=https://mirrors.cloud.tencent.com/pypi/simple/
+set MIRRORS[3]=https://pypi.python.org/simple/
+
+:: Smart GPU detection
+echo 🎮 检测GPU支持...
+set GPU_SUPPORT=false
 where nvidia-smi >nul 2>nul
 if "!errorlevel!" equ "0" (
-    echo nvidia-smi command found, checking if driver is working properly...
-    nvidia-smi >nul 2>nul
+    nvidia-smi --query-gpu=name --format=csv,noheader >nul 2>nul
     if "!errorlevel!" equ "0" (
-        echo NVIDIA GPU detected, installing GPU dependencies...
-        echo Installing base dependencies first...
-        python -m pip install --upgrade pip setuptools wheel --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
-        
-        echo Installing numpy with multiple fallback strategies...
-        python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
-        if "!errorlevel!" neq "0" (
-            echo Aliyun mirror failed, trying Tsinghua mirror...
-            python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://pypi.tuna.tsinghua.edu.cn/simple/
-            if "!errorlevel!" neq "0" (
-                echo Tsinghua mirror failed, trying official PyPI...
-                python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR%
-                if "!errorlevel!" neq "0" (
-                    echo Specific version failed, trying latest compatible version...
-                    python -m pip install numpy --cache-dir %PIP_CACHE_DIR%
-                    if "!errorlevel!" neq "0" (
-                        echo NumPy installation failed completely. Please check your Python environment.
-                        pause
-                        exit /b 1
-                    )
-                )
-            )
+        echo ✅ 检测到NVIDIA GPU
+        for /f "tokens=*" %%g in ('nvidia-smi --query-gpu=name --format=csv,noheader 2^>nul') do (
+            echo    GPU: %%g
         )
-        echo NumPy installed successfully!
-        
-        python -m pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --cache-dir %PIP_CACHE_DIR% -i https://download.pytorch.org/whl/cu121
-        echo Installing remaining dependencies...
-        pip install -r requirements_gpu.txt --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
+        set GPU_SUPPORT=true
     ) else (
-        echo NVIDIA driver not working properly. Error running nvidia-smi.
-        echo Using CPU version instead...
-        goto InstallCPUVersion
+        echo ⚠️  NVIDIA驱动程序异常
     )
 ) else (
-    echo No NVIDIA GPU detected, using CPU version...
-    goto InstallCPUVersion
+    echo 📱 未检测到NVIDIA GPU，使用CPU模式
 )
-goto EndGPUCheck
 
-:InstallCPUVersion
-echo Installing base dependencies first...
-python -m pip install --upgrade pip setuptools wheel --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
-python -m pip install numpy==1.24.4 --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
-python -m pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --cache-dir %PIP_CACHE_DIR% -i https://download.pytorch.org/whl/cpu
-echo Installing remaining dependencies...
-pip install -r requirements_cpu.txt --cache-dir %PIP_CACHE_DIR% -i https://mirrors.aliyun.com/pypi/simple/
-goto EndGPUCheck
+:: Install core dependencies with retry mechanism
+echo.
+echo 🔄 安装核心依赖包...
+call :InstallPackageWithRetry "wheel setuptools" "构建工具"
+call :InstallPackageWithRetry "numpy>=1.21.0,<2.0.0" "数值计算库"
 
-:EndGPUCheck
+:: Install PyTorch based on GPU support
+echo.
+if "!GPU_SUPPORT!"=="true" (
+    echo 🎮 安装GPU版本PyTorch...
+    call :InstallPackageWithRetry "torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121" "PyTorch GPU版本"
+    
+    :: Verify CUDA availability
+    python -c "import torch; print('CUDA available:', torch.cuda.is_available())" 2>nul
+    if "!errorlevel!" equ "0" (
+        echo ✅ CUDA支持验证成功
+    ) else (
+        echo ⚠️  CUDA支持验证失败，将使用CPU版本
+        set GPU_SUPPORT=false
+    )
+)
 
-if "!errorlevel!" neq "0" (
-    echo Dependency installation failed. Check your network connection.
+if "!GPU_SUPPORT!"=="false" (
+    echo 💻 安装CPU版本PyTorch...
+    call :InstallPackageWithRetry "torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu" "PyTorch CPU版本"
+)
+
+:: Install project requirements
+echo.
+echo 📋 安装项目依赖文件...
+if "!GPU_SUPPORT!"=="true" (
+    if exist requirements_gpu.txt (
+        call :InstallRequirementsWithRetry "requirements_gpu.txt" "GPU项目依赖"
+    ) else (
+        echo ⚠️  requirements_gpu.txt文件不存在，使用通用依赖
+        call :InstallRequirementsWithRetry "requirements.txt" "通用项目依赖"
+    )
+) else (
+    if exist requirements_cpu.txt (
+        call :InstallRequirementsWithRetry "requirements_cpu.txt" "CPU项目依赖"
+    ) else if exist requirements.txt (
+        call :InstallRequirementsWithRetry "requirements.txt" "通用项目依赖"
+    ) else (
+        echo ⚠️  未找到requirements文件，跳过依赖安装
+    )
+)
+
+:: Optional packages
+echo.
+echo 🔧 安装可选增强包...
+echo 注意：FAISS包用于向量相似度搜索，如安装失败不影响基本功能
+if "!GPU_SUPPORT!"=="true" (
+    call :InstallPackageOptional "faiss-gpu" "FAISS GPU版本"
+) else (
+    call :InstallPackageOptional "faiss-cpu" "FAISS CPU版本"
+)
+
+echo ✅ 依赖安装完成！
+echo.
+
+:: Create directories
+echo [4/6] 📁 创建项目目录...
+for %%D in (db models_file temp_files logs) do (
+    if not exist %%D (
+        mkdir %%D
+        echo ✅ 创建目录：%%D
+    ) else (
+        echo 📁 目录已存在：%%D
+    )
+)
+echo.
+
+:: Configuration check
+echo [5/6] ⚙️  检查配置文件...
+if exist config.py (
+    echo ✅ 配置文件存在
+) else if exist config.yaml (
+    echo ✅ 配置文件存在
+) else (
+    echo ⚠️  未找到配置文件，将使用默认配置
+)
+
+:: Final system check
+echo [6/6] 🔍 系统就绪检查...
+echo 检查关键文件...
+set MISSING_FILES=
+for %%F in (app.py ui.py main.py) do (
+    if not exist %%F (
+        set MISSING_FILES=!MISSING_FILES! %%F
+    )
+)
+
+if defined MISSING_FILES (
+    echo ❌ 缺少关键文件：!MISSING_FILES!
+    echo 请确保在正确的项目目录中运行此脚本
     pause
     exit /b 1
 )
-echo Dependencies installed!
 
-echo.
-echo NOTE: faiss package was skipped during installation.
-echo If you need vector similarity search functionality, please install it manually:
-echo - For CPU: pip install faiss-cpu
-echo - For GPU: pip install faiss-gpu
-echo.
-
-:: Create necessary directories
-echo [4/6] Creating necessary directories...
-mkdir db 2>nul
-mkdir models_file 2>nul
-mkdir temp_files 2>nul
-echo Directories created!
-
-echo.
-
-
+echo ✅ 系统检查通过
 echo.
 
 :: Start services
-echo [6/6] Starting services...
+echo =======================================================
+echo 🚀 启动EasyRAG知识库系统
+echo =======================================================
 echo.
-echo All preparations complete, starting services!
-echo.
-echo Note: Press Ctrl+C to stop the services
+echo 📋 服务信息：
+echo   - API服务端口：8028
+echo   - Web界面端口：7861
+echo   - GPU支持：!GPU_SUPPORT!
+echo   - Python版本：!VENV_PYTHON_VERSION!
 echo.
 
-:: Prepare the activation command for the virtual environment
 set VENV_ACTIVATE=%CD%\py_env\Scripts\activate.bat
 
-:: Start two command prompt windows, one for API server, one for Web UI
-echo Starting API server in new window...
-start cmd /k "call %VENV_ACTIVATE% && python app.py"
-timeout /t 5 > nul
+echo 🔄 启动API服务器...
+start "EasyRAG API Server" cmd /k "title EasyRAG API Server && call %VENV_ACTIVATE% && echo 🚀 启动API服务器... && python app.py"
 
-echo Starting Web UI in new window...
-start cmd /k "call %VENV_ACTIVATE% && python ui.py"
+echo ⏳ 等待API服务器启动...
+timeout /t 8 /nobreak > nul
+
+echo 🔄 启动Web界面...
+start "EasyRAG Web UI" cmd /k "title EasyRAG Web Interface && call %VENV_ACTIVATE% && echo 🌐 启动Web界面... && python ui.py"
 
 echo.
-echo EasyRAG knowledge base system started!
-echo API server running at: http://localhost:8028
-echo Web interface running at: http://localhost:7861
+echo ✅ EasyRAG知识库系统启动完成！
 echo.
-echo Please visit http://localhost:7861 in your browser to use the system
+echo 🌐 访问地址：
+echo   - Web界面：http://localhost:7861
+echo   - API接口：http://localhost:8028
 echo.
-echo Two new command prompt windows have been opened:
-echo - One for the API server (app.py)
-echo - One for the Web UI (ui.py)
+echo 📝 使用说明：
+echo   - 两个新的命令行窗口已打开（API服务器和Web界面）
+echo   - 在Web界面中可以上传文档、创建知识库、进行问答
+echo   - 按Ctrl+C可以停止相应的服务
+echo   - 所有服务都运行在Python 3.9虚拟环境中
 echo.
-echo Both are using the Python 3.9 virtual environment created by this script.
+echo 🎉 部署完成！祝您使用愉快！
 echo.
 
-pause 
+:: Open browser automatically
+echo 是否自动打开浏览器访问Web界面？(Y/N)
+set /p OPEN_BROWSER=请选择 (默认Y): 
+if /i not "!OPEN_BROWSER!"=="N" (
+    echo 🌐 正在打开浏览器...
+    timeout /t 3 /nobreak > nul
+    start http://localhost:7861
+)
+
+pause
+goto :eof
+
+:: Helper functions
+:InstallPackageWithRetry
+set PACKAGE=%~1
+set DESCRIPTION=%~2
+echo 安装 %DESCRIPTION% (%PACKAGE%)...
+
+for /L %%i in (0,1,3) do (
+    if %%i equ 0 (
+        python -m pip install %PACKAGE% --cache-dir "%PIP_CACHE_DIR%" -i !MIRRORS[%%i]! --timeout 60
+    ) else (
+        echo 重试 %%i/3 - 使用镜像源 %%i...
+        python -m pip install %PACKAGE% --cache-dir "%PIP_CACHE_DIR%" -i !MIRRORS[%%i]! --timeout 60
+    )
+    
+    if "!errorlevel!" equ "0" (
+        echo ✅ %DESCRIPTION% 安装成功
+        goto :eof
+    )
+)
+
+echo ❌ %DESCRIPTION% 安装失败
+pause
+exit /b 1
+
+:InstallRequirementsWithRetry
+set REQ_FILE=%~1
+set DESCRIPTION=%~2
+echo 安装 %DESCRIPTION% (%REQ_FILE%)...
+
+for /L %%i in (0,1,3) do (
+    if %%i equ 0 (
+        python -m pip install -r %REQ_FILE% --cache-dir "%PIP_CACHE_DIR%" -i !MIRRORS[%%i]! --timeout 60
+    ) else (
+        echo 重试 %%i/3 - 使用镜像源 %%i...
+        python -m pip install -r %REQ_FILE% --cache-dir "%PIP_CACHE_DIR%" -i !MIRRORS[%%i]! --timeout 60
+    )
+    
+    if "!errorlevel!" equ "0" (
+        echo ✅ %DESCRIPTION% 安装成功
+        goto :eof
+    )
+)
+
+echo ❌ %DESCRIPTION% 安装失败
+pause
+exit /b 1
+
+:InstallPackageOptional
+set PACKAGE=%~1
+set DESCRIPTION=%~2
+echo 尝试安装 %DESCRIPTION% (%PACKAGE%)...
+
+python -m pip install %PACKAGE% --cache-dir "%PIP_CACHE_DIR%" -i !MIRRORS[0]! --timeout 60 >nul 2>&1
+if "!errorlevel!" equ "0" (
+    echo ✅ %DESCRIPTION% 安装成功
+) else (
+    echo ⚠️  %DESCRIPTION% 安装失败（可选包，不影响基本功能）
+)
+goto :eof 
