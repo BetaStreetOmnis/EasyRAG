@@ -25,7 +25,7 @@
 - 🎯 **混合搜索技术** - 向量检索 + 关键词检索，检索精度提升40%
 - 🤖 **多模型支持** - 支持20+Embedding模型，灵活选择最优方案
 - 📚 **多格式文档** - 支持PDF、Word、Markdown、TXT等10+格式
-- 🔄 **一键部署** - Docker/脚本自动化部署，3分钟快速上手
+- 🖥️ **集成Web界面** - 无需额外启动，通过API服务端口即可访问
 - ⚡ **高性能API** - 毫秒级检索响应，支持百万级文档库
 - 🔗 **生态集成** - 为[DocuGen](https://github.com/BetaStreetOmnis/DocuGen)等AI应用提供知识检索服务
 
@@ -228,7 +228,7 @@ cd EasyRAG
 docker-compose up --build -d
 
 # 4️⃣ 访问服务
-# 浏览器打开：http://localhost:7861
+# 浏览器打开：http://localhost:8028
 ```
 
 ### 📜 方式二：脚本自动部署 (⭐推荐新手)
@@ -242,7 +242,7 @@ docker-compose up --build -d
 双击运行 deploy.bat
 # 或命令行：deploy.bat
 
-# 第二步：启动服务（激活环境、启动API和Web界面）
+# 第二步：启动服务（激活环境、启动服务）
 双击运行 start.bat  
 # 或命令行：start.bat
 ```
@@ -291,8 +291,7 @@ cp .env.example .env
 # 编辑 .env 文件，配置模型路径等参数
 
 # 6️⃣ 启动服务
-python app.py    # 后端API服务 (端口8000)
-python ui_new.py # 前端Web界面 (端口7861)
+python app.py    # 启动后端API及前端UI服务 (端口8028)
 ```
 
 </details>
@@ -366,8 +365,7 @@ start.bat
 🎯 **启动流程**
 - 🔌 自动激活Python虚拟环境
 - 📋 加载.env环境配置文件
-- 🚀 启动FastAPI后端服务
-- 🌐 启动Gradio Web界面
+- 🚀 启动Web服务 (API和UI)
 - 🎉 自动打开浏览器页面
 
 **⏱️ 启动时间**: ~30秒
@@ -396,16 +394,13 @@ start.bat
 
 ## 🌐 访问服务
 
-部署完成后，通过以下地址访问：
+部署完成后，浏览器访问以下地址即可开始使用：
 
 <div align="center">
 
-| 服务名称 | 访问地址 | 功能说明 | 状态检查 |
-|----------|----------|----------|----------|
-| 🌐 **主界面** | [`http://localhost:7861`](http://localhost:7861) | 知识库管理和对话界面 | [检查状态](http://localhost:7861) |
-| 📚 **API文档** | [`http://localhost:8000/docs`](http://localhost:8000/docs) | 完整的API接口文档 | [检查状态](http://localhost:8000/docs) |
-| 🔧 **API服务** | [`http://localhost:8000`](http://localhost:8000) | 后端REST API接口 | [健康检查](http://localhost:8000/health) |
-| 📊 **监控面板** | [`http://localhost:8000/metrics`](http://localhost:8000/metrics) | 系统性能监控 | [查看指标](http://localhost:8000/metrics) |
+| 服务名称 | 访问地址 | 功能说明 |
+|----------|----------|----------|
+| 🌐 **EasyRAG服务** | [`http://localhost:8028`](http://localhost:8028) | 知识库管理界面和API |
 
 </div>
 
@@ -450,7 +445,7 @@ sequenceDiagram
 import requests
 
 # 检索API调用
-response = requests.post("http://localhost:8000/search", json={
+response = requests.post("http://localhost:8028/search", json={
     "knowledge_base_id": "your_kb_id",
     "query": "你的查询问题",
     "top_k": 5,
@@ -467,7 +462,7 @@ for result in results["documents"]:
 ```python
 # DocuGen调用EasyRAG进行知识检索
 def get_knowledge_context(topic):
-    response = requests.post("http://localhost:8000/search", json={
+    response = requests.post("http://localhost:8028/search", json={
         "knowledge_base_id": "document_kb",
         "query": topic,
         "top_k": 10,
@@ -487,8 +482,7 @@ context = get_knowledge_context("人工智能发展趋势")
 
 ```bash
 # 服务端口配置
-API_PORT=8000
-WEB_PORT=7861
+API_PORT=8028
 
 # 模型配置
 EMBEDDING_MODEL=thenlper/gte-large-zh
@@ -524,23 +518,24 @@ BATCH_SIZE=32
 
 ```
 🏗️ EasyRAG 系统架构
-├── 🐳 docker-compose.yml     # Docker编排配置
-├── 🚀 app.py                 # FastAPI后端主服务
-├── 🌐 ui_new.py              # Gradio管理界面
+├── 🚀 app.py                 # FastAPI服务 (API + UI)
+├── 🚀 main.py                # RAG核心服务 (RAGService)
+├── 📚 core/                  # 核心功能模块
+│   ├── chunker/             # 文本分块
+│   ├── db/                  # 数据库交互
+│   ├── llm/                 # 模型加载与推理
+│   ├── parser/              # 文档解析
+│   ├── retriever/           # 知识检索
+│   ├── reranker/            # 结果重排
+│   └── utils/               # 通用工具
 ├── 📜 deploy.bat/deploy.sh   # 自动部署脚本
 ├── 🚀 start.bat/start.sh     # 快速启动脚本
+├── 🐳 docker-compose.yml     # Docker编排
 ├── ⚙️ .env                   # 环境配置文件
-├── 📚 core/                  # 核心功能模块
-│   ├── 📄 kb_doc_process.py  # 文档处理与智能分块
-│   ├── 🔍 kb_retriever.py    # 混合检索引擎
-│   ├── 🏆 kb_reranker.py     # 智能重排序模块
-│   ├── 🔗 api_interface.py   # API接口层
-│   ├── 💾 database.py        # 数据库操作层
-│   └── 🛠️ utils.py           # 通用工具函数
-├── 📦 models/                # 模型文件目录
-├── 💾 data/                  # 数据存储目录
-├── 📋 requirements*.txt      # 依赖配置文件
-└── 📖 docs/                  # 详细文档目录
+├── 📦 models/                # 模型缓存目录
+├── 💾 data/                  # 知识库数据目录
+├── 📋 requirements*.txt      # Python依赖
+└── 📖 docs/                  # 项目文档
 ```
 
 ---
@@ -680,7 +675,7 @@ py_env\Scripts\activate     # Windows
 pip list | grep -E "(faiss|torch|transformers)"
 
 # 查看详细错误
-python app.py --debug
+python app.py
 ```
 
 ### 🔧 常见错误代码
@@ -689,7 +684,7 @@ python app.py --debug
 |----------|----------|----------|
 | `ModuleNotFoundError` | 缺少Python包 | `pip install -r requirements.txt` |
 | `CUDA out of memory` | GPU内存不足 | 减小batch_size或使用CPU |
-| `Port already in use` | 端口被占用 | 修改.env中的端口配置 |
+| `Port already in use` | 端口被占用 | 修改.env中的API_PORT配置 |
 | `Permission denied` | 权限不足 | 使用管理员权限运行 |
 
 ---
@@ -711,14 +706,14 @@ python app.py --debug
 <summary>❓ 如何与DocuGen集成？</summary>
 
 **集成方式**:
-1. 确保EasyRAG服务运行在 `http://localhost:8000`
-2. 在DocuGen的 `.env` 中配置 `EASYRAG_API_URL=http://localhost:8000`
+1. 确保EasyRAG服务运行在 `http://localhost:8028`
+2. 在DocuGen的 `.env` 中配置 `EASYRAG_API_URL=http://localhost:8028`
 3. DocuGen会自动调用EasyRAG的检索API获取相关知识
 
 **API调用示例**:
 ```python
 # DocuGen中的调用方式
-response = requests.post("http://localhost:8000/search", json={
+response = requests.post("http://localhost:8028/search", json={
     "knowledge_base_id": "your_kb_id",
     "query": "查询内容",
     "top_k": 10
@@ -838,10 +833,8 @@ git push origin feature/your-feature-name
 
 感谢以下开源项目的支持：
 - [FastAPI](https://fastapi.tiangolo.com/) - 现代化的Web API框架
-- [Gradio](https://gradio.app/) - 快速构建ML应用界面
 - [Transformers](https://huggingface.co/transformers/) - 预训练模型库
 - [Faiss](https://github.com/facebookresearch/faiss) - 高效向量相似度搜索
-- [LangChain](https://langchain.com/) - LLM应用开发框架
 
 **特别感谢**：
 - 🖋️ [DocuGen](https://github.com/BetaStreetOmnis/DocuGen) - 基于EasyRAG的智能文档生成系统
