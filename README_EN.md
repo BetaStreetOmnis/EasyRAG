@@ -821,12 +821,6 @@ git push origin feature/your-feature-name
 3. 🐛 **Submit an Issue**: [Create a new Issue](https://github.com/BetaStreetOmnis/EasyRAG/issues/new).
 4. 💬 **Join Discussions**: [GitHub Discussions](https://github.com/BetaStreetOmnis/EasyRAG/discussions).
 
-### 🌟 Community Resources
-- 📚 **Detailed Docs**: [Online Documentation](https://BetaStreetOmnis.github.io/EasyRAG)
-- 🎥 **Video Tutorials**: [Bilibili Tutorials](https://space.bilibili.com/your-channel)
-- 💬 **QQ Group**: 123456789
-- 🌟 **WeChat Group**: Scan the QR code to join.
-
 ---
 
 ## 🏆 Acknowledgements

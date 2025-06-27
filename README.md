@@ -816,16 +816,10 @@ git push origin feature/your-feature-name
 ## 📞 支持与社区
 
 ### 🆘 获取帮助
-1. 📋 **查看文档**: 阅读本README和[详细文档](docs/)
-2. 🔍 **搜索问题**: 在Issues中搜索类似问题
-3. 🐛 **提交Issue**: [创建新Issue](https://github.com/BetaStreetOmnis/EasyRAG/issues/new)
-4. 💬 **加入讨论**: [GitHub Discussions](https://github.com/BetaStreetOmnis/EasyRAG/discussions)
-
-### 🌟 社区资源
-- 📚 **详细文档**: [在线文档](https://BetaStreetOmnis.github.io/EasyRAG)
-- 🎥 **视频教程**: [B站教程](https://space.bilibili.com/your-channel)
-- 💬 **QQ交流群**: 123456789
-- 🌟 **微信群**: 扫描二维码加入
+1. 📋 **查阅文档** - 阅读本README和[详细文档](docs/)
+2. 🔍 **搜索Issue** - 在Issues区搜索类似问题
+3. 🐛 **提交Issue** - [创建新的Issue](https://github.com/BetaStreetOmnis/EasyRAG/issues/new)
+4. 💬 **参与讨论** - [GitHub Discussions](https://github.com/BetaStreetOmnis/EasyRAG/discussions)
 
 ---
 
