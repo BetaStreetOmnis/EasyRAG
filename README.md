@@ -2,9 +2,7 @@
 
 # 🚀 EasyRAG - 轻量级本地知识库增强系统
 
-</div>
-
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.9+-green.svg)](https://python.org)
 [![Docker](https://img.shields.io/badge/Docker-支持-blue.svg)](https://docker.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)]()
@@ -13,6 +11,8 @@
 [中文](README.md) | [English](README_EN.md)
 
 **🎯 一键部署 · 🔒 本地私有 · 🚀 高性能检索 · 🤖 多模型支持**
+
+</div>
 
 ---
 
@@ -780,7 +780,7 @@ cp -r /path/to/backup/knowledge_bases/ data/
 
 ## 📄 许可证
 
-本项目采用 [MIT License](LICENSE) 许可证。
+本项目采用 [Apache License 2.0](LICENSE) 许可证。
 
 ---
 
