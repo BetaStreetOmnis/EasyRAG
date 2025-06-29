@@ -788,27 +788,7 @@ cp -r /path/to/backup/knowledge_bases/ data/
 - 💡 **功能建议**: 提出新功能想法
 - 📝 **文档改进**: 完善文档和教程
 - 💻 **代码贡献**: 提交Pull Request
-
-### 📋 开发指南
-```bash
-# 1. Fork项目到你的GitHub
-# 2. 克隆到本地
-git clone https://github.com/BetaStreetOmnis/EasyRAG.git
-
-# 3. 创建开发分支
-git checkout -b feature/your-feature-name
-
-# 4. 安装开发依赖
-pip install -r requirements-dev.txt
-
-# 5. 运行测试
-pytest tests/
-
-# 6. 提交更改
-git commit -m "feat: add your feature"
-git push origin feature/your-feature-name
-
-# 7. 创建Pull Request
+l Request
 ```
 
 ---
