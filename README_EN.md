@@ -761,15 +761,6 @@ tar -czf easyrag_backup.tar.gz data/ models/ .env
 cp -r data/knowledge_bases/ /path/to/backup/
 ```
 
-**Data Migration**:
-```bash
-# Unzip in the new environment
-tar -xzf easyrag_backup.tar.gz
-
-# Or copy the data directory
-cp -r /path/to/backup/knowledge_bases/ data/
-```
-</details>
 
 ---
 
@@ -788,28 +779,6 @@ We welcome all forms of contributions!
 - 💡 **Suggest Features**: Propose new feature ideas.
 - 📝 **Improve Documentation**: Enhance documentation and tutorials.
 - 💻 **Contribute Code**: Submit a Pull Request.
-
-### 📋 Development Guide
-```bash
-# 1. Fork the project to your GitHub
-# 2. Clone it locally
-git clone https://github.com/BetaStreetOmnis/EasyRAG.git
-
-# 3. Create a development branch
-git checkout -b feature/your-feature-name
-
-# 4. Install development dependencies
-pip install -r requirements-dev.txt
-
-# 5. Run tests
-pytest tests/
-
-# 6. Commit your changes
-git commit -m "feat: add your feature"
-git push origin feature/your-feature-name
-
-# 7. Create a Pull Request
-```
 
 ---
 

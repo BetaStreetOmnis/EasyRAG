@@ -14,7 +14,7 @@ echo ""
 echo "This script will help you deploy the EasyRAG local knowledge base system."
 echo "It will check and install required components automatically."
 echo ""
-echo -e "${GREEN}=======================================================${NC}"
+echo -e "${GREEN}=======================================================${NC}"     
 echo ""
 
 # [1/7] 检查Python安装
