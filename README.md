@@ -307,9 +307,9 @@ python app.py    # 启动后端API及前端UI服务 (端口8028)
 <td width="33%">
 
 #### 🐳 Docker方式
-```bash
-docker-compose up --build -d
-```
+    ```bash
+    docker-compose up --build -d
+    ```
 ✅ **优势特点**
 - 🚀 一键完成所有配置
 - 📦 环境完全隔离

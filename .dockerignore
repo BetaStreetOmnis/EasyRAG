@@ -1,0 +1,57 @@
+# Git 相关
+.git
+.gitignore
+.gitattributes
+
+# Python 缓存和虚拟环境
+__pycache__/
+*.py[cod]
+*$py.class
+py_env/
+venv/
+.venv/
+pip_cache/
+
+# 数据库和日志文件
+db/
+logs/
+*.log
+*.log.*
+
+# 模型文件（这些应该在运行时下载）
+models_file/
+
+# 临时文件
+temp_files/
+*.tmp
+
+# 文档和说明
+README.md
+README_EN.md
+*.md
+docs/
+images/
+
+# 部署脚本
+deploy.bat
+deploy_ubuntu.sh
+start.bat
+start.sh
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Docker 相关
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 新建文件夹
+新建文件夹/ 
