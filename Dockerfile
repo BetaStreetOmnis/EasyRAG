@@ -1,5 +1,5 @@
-# 使用网易云镜像源的 Python 3.10 基础镜像
-FROM hub.c.163.com/library/python:3.10-slim
+# 使用 Python 3.10 基础镜像
+FROM python:3.10-slim
 
 # 设置工作目录
 WORKDIR /app
