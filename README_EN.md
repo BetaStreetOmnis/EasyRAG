@@ -214,26 +214,37 @@ graph TD
 
 ---
 
-### 🐳 Method 1: Docker One-Click Deployment (⭐Recommended)
-
-> 🎯 **The simplest and most stable deployment method, suitable for all users.**
+### 🐳 Method 1: Docker Deployment (⭐Recommended)
 
 ```bash
-# 1️⃣ Make sure Docker and Docker Compose are installed
+# 1️⃣ Make sure Docker is installed
 # 2️⃣ Clone the project locally
 git clone https://github.com/BetaStreetOmnis/EasyRAG.git
 cd EasyRAG
 
-# 3️⃣ Start all services with one click
-docker-compose up --build -d
+# 3️⃣ Build the Docker image
+sudo docker build -t easyrag .
 
-# 4️⃣ Access the service
+# 4️⃣ Run the Docker container
+# Note: Please modify the host paths in the -v parameters according to your system.
+# For example, replace /home/EasyRAG/data_from_docker with your actual path.
+docker run -d \
+-p 80:80 \
+-p 8028:8028 \
+-v /home/EasyRAG/data_from_docker/data:/data \
+-v /home/EasyRAG/data_from_docker/db:/app/db \
+-v /home/EasyRAG/data_from_docker/logs:/app/logs \
+-v /home/EasyRAG/data_from_docker/models_file:/app/models_file \
+-v /home/EasyRAG/data_from_docker/files:/app/files \
+--name easyrag-app \
+--restart always \
+easyrag:latest
+
+# 5️⃣ Access the service
 # Open in browser: http://localhost:8028
 ```
 
 ### 📜 Method 2: Script-based Automatic Deployment (⭐Recommended for Beginners)
-
-> 🎯 **Two steps: first deploy, then start.**
 
 #### 🪟 For Windows Users
 

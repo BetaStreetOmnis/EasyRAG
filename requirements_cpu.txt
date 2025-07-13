@@ -21,7 +21,7 @@ datasets==3.1.0
 dill==0.3.8
 easyocr==1.7.2
 exceptiongroup==1.2.2
-fastapi==0.115.11
+fastapi
 ffmpy==0.5.0
 filelock==3.16.1
 fonttools==4.56.0
