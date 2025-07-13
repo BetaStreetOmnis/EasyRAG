@@ -214,20 +214,36 @@ graph TD
 
 ---
 
-### 🐳 方式一：Docker一键部署 (⭐推荐)
-
-> 🎯 **最简单、最稳定的部署方式，适合所有用户**
+### 🐳 方式一：Docker部署 (⭐推荐)
 
 ```bash
-# 1️⃣ 确保已安装 Docker 和 Docker Compose
+# 1️⃣ 确保已安装 Docker
 # 2️⃣ 克隆项目到本地
 git clone https://github.com/BetaStreetOmnis/EasyRAG.git
 cd EasyRAG
 
-# 3️⃣ 一键启动所有服务
-docker-compose up --build -d
+# 3️⃣ 构建 Docker 镜像
+sudo docker build -t easyrag .
 
-# 4️⃣ 访问服务
+# 4️⃣ 运行 Docker 容器
+# 注意：请根据您的系统修改 -v 参数中的主机路径
+# 1. 将 /home/EasyRAG 替换为您的项目代码在本地的绝对路径。
+#    这可以让您在本地修改代码后，容器内实时生效，方便开发。
+# 2. 将 /home/EasyRAG/data_from_docker/... 替换为您希望在本地存放数据的绝对路径。
+docker run -d \
+-p 80:80 \
+-p 8028:8028 \
+-v /home/EasyRAG:/app \
+-v /home/EasyRAG/data_from_docker/data:/data \
+-v /home/EasyRAG/data_from_docker/db:/app/db \
+-v /home/EasyRAG/data_from_docker/logs:/app/logs \
+-v /home/EasyRAG/data_from_docker/models_file:/app/models_file \
+-v /home/EasyRAG/data_from_docker/files:/app/files \
+--name easyrag-app \
+--restart always \
+easyrag:latest
+
+# 5️⃣ 访问服务
 # 浏览器打开：http://localhost:8028
 ```
 

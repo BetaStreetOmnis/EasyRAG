@@ -1,5 +1,5 @@
-# 使用 Python 3.10 基础镜像
-FROM python:3.10-slim
+# 使用网易云镜像源的 Python 3.10 基础镜像
+FROM hub.c.163.com/library/python:3.10-slim
 
 # 设置工作目录
 WORKDIR /app
@@ -10,6 +10,10 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     DEBIAN_FRONTEND=noninteractive
+
+# 配置国内软件源
+RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list && \
+    sed -i 's/security.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
 
 # 配置 pip 使用国内源
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple/ && \
