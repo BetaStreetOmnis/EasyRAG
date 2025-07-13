@@ -2,26 +2,26 @@
     {
         "name": "文档生成",
         "icon": "bx-book-content",
-        "url": "http://150.138.81.55:8080/document-generator",
+        "url": "http://124.132.152.75:8080/document-generator",
         "description": "强大的文档生成工具，用于生成高质量的文档。"
     },
     {
         "name": "基于模板的文档生成",
         "icon": "bx-git-branch",
-        "url": "http://150.138.81.55:8080/template-generator",
+        "url": "http://124.132.152.75:8080/template-generator",
         "description": "基于模板的文档生成工具，用于生成高质量的文档。"
     },
     {
         "name": "智能问答",
         "icon": "bx-palette",
-        "url": "http://150.138.81.55:8080/qa",
+        "url": "http://124.132.152.75:8080/qa",
         "description": "智能问答工具，用于回答用户的问题。"
     }
 ,
     {
         "name": "消防智能平台",
         "icon": "bx-fire",
-        "url": "http://150.138.81.55:5005",
+        "url": "http://124.132.152.75:5005",
         "description": "消防领域的智能工具。"
     }
 ] 
