@@ -26,25 +26,34 @@ validate_python() {
 
 validate_frontend() {
     echo "🎨 验证前端代码..."
-    
+
     # 检查Node.js
     if ! command -v node &> /dev/null; then
         echo "  ⚠️  Node.js 未安装，跳过前端代码检查"
         return
     fi
-    
+
     # 检查node_modules
     if [ ! -d "node_modules" ]; then
         echo "  📥 安装前端依赖..."
         npm install --quiet
     fi
-    
+
     # 运行ESLint
     echo "  ✓ 运行 ESLint..."
-    npx eslint@8.57.0 static/**/*.js || {
-        echo "  ⚠️  ESLint 发现问题，运行 'npx eslint@8.57.0 static/**/*.js --fix' 自动修复"
+    npx eslint@9.18.0 static/**/*.js vite.config.js || {
+        echo "  ⚠️  ESLint 发现问题，运行 'npx eslint@9.18.0 static/**/*.js vite.config.js --fix' 自动修复"
+        return 1
     }
     echo "  ✅ 前端代码检查完成"
+
+    # 运行Vite构建
+    echo "  ✓ 运行 Vite 构建..."
+    npx vite@6.2.0 build || {
+        echo "  ❌ Vite 构建失败"
+        return 1
+    }
+    echo "  ✅ Vite 构建完成"
     echo ""
 }
 

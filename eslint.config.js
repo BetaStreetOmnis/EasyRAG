@@ -1,5 +1,3 @@
-import globals from 'globals';
-
 export default [
     {
         ignores: ['dist/**', 'node_modules/**']
@@ -10,7 +8,15 @@ export default [
             ecmaVersion: 'latest',
             sourceType: 'module',
             globals: {
-                ...globals.browser
+                window: 'readonly',
+                document: 'readonly',
+                localStorage: 'readonly',
+                console: 'readonly',
+                setTimeout: 'readonly',
+                setInterval: 'readonly',
+                fetch: 'readonly',
+                Event: 'readonly',
+                CustomEvent: 'readonly'
             }
         },
         rules: {}
@@ -21,7 +27,10 @@ export default [
             ecmaVersion: 'latest',
             sourceType: 'module',
             globals: {
-                ...globals.node
+                process: 'readonly',
+                __dirname: 'readonly',
+                __filename: 'readonly',
+                console: 'readonly'
             }
         },
         rules: {}
