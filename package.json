@@ -1,0 +1,20 @@
+{
+  "name": "easyrag-frontend",
+  "version": "1.0.0",
+  "description": "EasyRAG前端代码验证工具",
+  "scripts": {
+    "lint": "eslint static/**/*.js",
+    "lint:fix": "eslint static/**/*.js --fix",
+    "validate": "npm run lint"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1"
+  },
+  "keywords": [
+    "rag",
+    "knowledge-base",
+    "ai"
+  ],
+  "author": "BetaStreetOmnis",
+  "license": "Apache-2.0"
+}

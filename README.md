@@ -795,6 +795,32 @@ cp -r /path/to/backup/knowledge_bases/ data/
 
 ---
 
+## 🔧 开发与验证
+
+如果您想为 EasyRAG 贡献代码，请确保通过代码验证。
+
+### ✅ 运行验证
+
+```bash
+# 运行所有验证（Python + 前端）
+./validate.sh
+
+# 仅验证 Python 代码
+./validate.sh python
+
+# 仅验证前端代码
+./validate.sh frontend
+```
+
+### 📋 验证内容
+
+- **Python**: 使用 flake8 进行代码规范检查
+- **JavaScript**: 使用 ESLint 进行代码规范检查
+
+> 💡 详细信息请参阅 [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
+
 ## 🤝 贡献指南
 
 我们欢迎所有形式的贡献！
