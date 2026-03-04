@@ -564,7 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load apps using AppConfigManager
     const loadApps = async () => {
         try {
-            const apps = await appConfigManager.loadApps();
+            const apps = await window.appConfigManager.loadApps();
             renderApps(apps);
         } catch (error) {
             console.error('加载应用失败:', error);
@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const index = parseInt(e.currentTarget.dataset.index);
                 if (confirm('确定要删除此应用吗？')) {
                     try {
-                        const updatedApps = await appConfigManager.deleteApp(index);
+                        const updatedApps = await window.appConfigManager.deleteApp(index);
                         renderApps(updatedApps);
                         showToast('应用已删除', 'success');
                     } catch (error) {
@@ -647,7 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const app = { name, icon, url, description };
         
         try {
-            const updatedApps = await appConfigManager.addApp(app);
+            const updatedApps = await window.appConfigManager.addApp(app);
             renderApps(updatedApps);
             
             // Reset form and hide it
@@ -664,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleResetApps = async () => {
         if (confirm('确定要重置为默认应用列表吗？这将删除所有自定义应用。')) {
             try {
-                const defaultApps = await appConfigManager.resetToDefault();
+                const defaultApps = await window.appConfigManager.resetToDefault();
                 renderApps(defaultApps);
                 showToast('已重置为默认应用列表', 'success');
             } catch (error) {

@@ -82,4 +82,9 @@ class AppConfigManager {
 }
 
 // 导出单例实例
-const appConfigManager = new AppConfigManager(); 
+const appConfigManager = new AppConfigManager();
+if (typeof window !== 'undefined') {
+    window.appConfigManager = appConfigManager;
+}
+
+export default appConfigManager;
