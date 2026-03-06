@@ -2,13 +2,19 @@
   "name": "easyrag-frontend",
   "version": "1.0.0",
   "description": "EasyRAG前端代码验证工具",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "lint": "eslint static/**/*.js",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint \"static/**/*.js\" \"vite.config.js\"",
     "lint:fix": "eslint static/**/*.js --fix",
     "validate": "npm run lint"
   },
   "devDependencies": {
-    "eslint": "^8.57.1"
+    "eslint": "^9.39.3",
+    "vite": "^6.4.1"
   },
   "keywords": [
     "rag",
