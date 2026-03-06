@@ -13,8 +13,8 @@
     "validate": "npm run lint"
   },
   "devDependencies": {
-    "eslint": "^9.39.3",
-    "vite": "^6.4.1"
+    "eslint": "^10.0.2",
+    "vite": "^7.3.1"
   },
   "keywords": [
     "rag",

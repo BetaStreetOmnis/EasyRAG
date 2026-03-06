@@ -104,39 +104,96 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Helper Functions ---
+    /**
+     * 防抖函数
+     */
+    const debounce = (fn, delay) => {
+        let timer;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn(...args), delay);
+        };
+    };
+
+    /**
+     * 批量填充多个 select 元素
+     */
+    const populateSelects = (selects, options, placeholder = '-- 请选择知识库 --') => {
+        selects.forEach(s => {
+            s.innerHTML = `<option value="">${placeholder}</option>`;
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt;
+                option.textContent = opt;
+                s.appendChild(option);
+            });
+        });
+    };
+
+    // --- Toast 队列管理 ---
+    const toastQueue = [];
+    const MAX_TOASTS = 3;
+
     const showToast = (message, type = 'info') => {
+        // 如果已经达到最大数量，移除最早的
+        const currentToasts = toastContainer.querySelectorAll('.toast');
+        if (currentToasts.length >= MAX_TOASTS) {
+            currentToasts[0].remove();
+        }
+
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        
+
         let iconClass = 'bx-info-circle';
         if (type === 'success') iconClass = 'bx-check-circle';
         if (type === 'error') iconClass = 'bx-error-circle';
         if (type === 'warning') iconClass = 'bx-error';
-        
+
         toast.innerHTML = `
             <div class="toast-icon"><i class="bx ${iconClass}"></i></div>
             <div class="toast-content">
                 <p class="toast-message">${message}</p>
             </div>
         `;
-        
+
         toastContainer.appendChild(toast);
-        
-        // Remove toast after animation completes
+
+        // 3秒后自动移除
         setTimeout(() => {
-            toast.remove();
+            toast.style.animation = 'fadeOut 0.3s ease-out forwards';
+            setTimeout(() => toast.remove(), 300);
         }, 3000);
     };
     
-    const fetchAPI = async (endpoint, options = {}) => {
+    /**
+     * 带超时的 fetch 请求
+     * @param {string} endpoint
+     * @param {Object} options
+     * @param {number} timeout 超时时间（毫秒）
+     * @returns {Promise<any>}
+     */
+    const fetchAPI = async (endpoint, options = {}, timeout = 30000) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
         try {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                ...options,
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ detail: response.statusText }));
                 throw new Error(errorData.detail || '请求失败');
             }
             return response.json();
         } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                showToast('请求超时，请检查网络连接', 'error');
+                throw new Error('请求超时');
+            }
             console.error(`API Error on ${endpoint}:`, error);
             showToast(`API错误: ${error.message}`, 'error');
             throw error;
@@ -148,31 +205,27 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const data = await fetchAPI('/kb/list');
             const kbList = data.data || [];
-            
-            // Clear existing options and table
+
+            // Clear and populate selects
             kbListTableBody.innerHTML = '';
             const selects = [deleteKbSelect, uploadKbSelect, fileKbSelect, searchKbSelect, chatKbSelect];
-            selects.forEach(s => s.innerHTML = '<option value="">-- 请选择知识库 --</option>');
 
             if (kbList.length === 0) {
+                populateSelects(selects, []);
                 kbListTableBody.innerHTML = '<tr><td colspan="4" class="text-center">没有找到知识库</td></tr>';
                 return;
             }
 
-            // Populate selects
-            kbList.forEach(kbName => {
-                selects.forEach(s => {
-                    const option = document.createElement('option');
-                    option.value = kbName;
-                    option.textContent = kbName;
-                    s.appendChild(option);
-                });
-            });
+            // Populate all selects at once
+            populateSelects(selects, kbList);
 
-            // Populate table
-            const infoPromises = kbList.map(name => fetchAPI(`/kb/info/${name}`));
-            const infos = await Promise.all(infoPromises);
+            // Populate table with parallel requests
+            const infos = await Promise.all(
+                kbList.map(name => fetchAPI(`/kb/info/${name}`))
+            );
 
+            // Use DocumentFragment for better performance
+            const fragment = document.createDocumentFragment();
             infos.forEach(infoData => {
                 const info = infoData.data;
                 const row = document.createElement('tr');
@@ -182,8 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${info.index_type}</td>
                     <td>${info.vector_count}</td>
                 `;
-                kbListTableBody.appendChild(row);
+                fragment.appendChild(row);
             });
+            kbListTableBody.appendChild(fragment);
 
         } catch (error) {
             kbListTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">加载知识库列表失败</td></tr>';
