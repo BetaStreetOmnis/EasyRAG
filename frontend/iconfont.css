@@ -1,0 +1,164 @@
+@font-face {
+  font-family: "iconfont"; /* Project id 3128004 */
+  src: url('./boxicons.woff2') format('woff2');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-brain:before {
+  content: "\e6bf";
+}
+
+.icon-data:before {
+  content: "\e6c0";
+}
+
+.icon-file:before {
+  content: "\e6c1";
+}
+
+.icon-search:before {
+  content: "\e6c2";
+}
+
+.icon-message:before {
+  content: "\e6c3";
+}
+
+.icon-grid:before {
+  content: "\e6c4";
+}
+
+.icon-sun:before {
+  content: "\e6c5";
+}
+
+.icon-moon:before {
+  content: "\e6c6";
+}
+
+.icon-plus:before {
+  content: "\e6c7";
+}
+
+.icon-plus-circle:before {
+  content: "\e6c8";
+}
+
+.icon-refresh:before {
+  content: "\e6c9";
+}
+
+.icon-delete:before {
+  content: "\e6ca";
+}
+
+.icon-list:before {
+  content: "\e6cb";
+}
+
+.icon-upload:before {
+  content: "\e6cc";
+}
+
+.icon-list-check:before {
+  content: "\e6cd";
+}
+
+.icon-send:before {
+  content: "\e6ce";
+}
+
+.icon-reset:before {
+  content: "\e6cf";
+}
+
+.icon-close:before {
+  content: "\e6d0";
+}
+
+.icon-info-circle:before {
+  content: "\e6d1";
+}
+
+.icon-check-circle:before {
+  content: "\e6d2";
+}
+
+.icon-error-circle:before {
+  content: "\e6d3";
+}
+
+.icon-warning:before {
+  content: "\e6d4";
+}
+
+.icon-link-external:before {
+  content: "\e6d5";
+}
+
+.icon-github:before {
+  content: "\e6d6";
+}
+
+.icon-book-content:before {
+  content: "\e6d7";
+}
+
+.icon-palette:before {
+  content: "\e6d8";
+}
+
+.icon-globe:before {
+  content: "\e6d9";
+}
+
+.icon-code:before {
+  content: "\e6da";
+}
+
+.icon-robot:before {
+  content: "\e6db";
+}
+
+.icon-chart:before {
+  content: "\e6dc";
+}
+
+.icon-book:before {
+  content: "\e6dd";
+}
+
+.icon-bulb:before {
+  content: "\e6de";
+}
+
+.icon-link:before {
+  content: "\e6df";
+}
+
+.icon-rocket:before {
+  content: "\e6e0";
+}
+
+.icon-server:before {
+  content: "\e6e1";
+}
+
+.icon-code-alt:before {
+  content: "\e6e2";
+}
+
+.icon-loader:before {
+  content: "\e6e3";
+}
+
+.icon-spin:before {
+  content: "\e6e3";
+} 
