@@ -2,18 +2,18 @@ import path from 'node:path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-    root: path.resolve(__dirname, 'frontend'),
+    root: '.',
     base: './',
     server: {
         host: '0.0.0.0',
         port: 5173
     },
     build: {
-        outDir: path.resolve(__dirname, 'dist/frontend'),
-        emptyOutDir: true,
+        outDir: '../dist/frontend',
+        emptyOutDir: false,
         cssCodeSplit: true,
         rollupOptions: {
-            input: path.resolve(__dirname, 'frontend/index.html'),
+            input: './index.html',
             output: {
                 entryFileNames: 'script.js',
                 chunkFileNames: 'js/[name]-[hash].js',
