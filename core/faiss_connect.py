@@ -693,14 +693,17 @@ class FaissManager:
     def list_collections(self) -> List[str]:
         """
         获取所有集合名称列表
-        
+
         Returns:
             List[str]: 集合名称列表
         """
         collections = []
         for filename in os.listdir(self.index_folder):
             if filename.endswith('.index'):
-                collections.append(filename[:-6])  # 去掉.index后缀
+                # 去掉.index后缀，然后URL解码以还原原始知识库名
+                encoded_name = filename[:-6]
+                original_name = urllib.parse.unquote(encoded_name)
+                collections.append(original_name)
         return collections
     
     def get_collection_info(self, collection_name: str) -> Dict[str, Any]:

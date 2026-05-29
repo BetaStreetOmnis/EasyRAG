@@ -100,10 +100,9 @@ class DocumentChunker:
                 separators=separators
             )
         elif self.method == ChunkMethod.BM25:
-            min_chunk_size = kwargs.get('min_chunk_size', 200)
             self.chunker = BM25Chunker(
-                min_chunk_size=min_chunk_size,
-                max_chunk_size=self.chunk_size
+                chunk_size=self.chunk_size,
+                chunk_overlap=self.chunk_overlap
             )
         elif self.method == ChunkMethod.SUBHEADING:
             main_headers_level = kwargs.get('main_headers_level', 1)
