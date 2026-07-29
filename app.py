@@ -38,6 +38,7 @@ if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
 from main import RAGService, DocumentProcessor
+from core.web_search.youcom_retriever import YouComWebRetriever
 # 添加进度跟踪字典
 # 格式: {task_id: {"status": "processing/completed/failed", "progress": 0-100, "message": "处理中..."}}
 processing_tasks = {}
@@ -59,6 +60,10 @@ class SearchQuery(BaseModel):
     use_rerank: bool = True
     remove_duplicates: bool = True
     filter_criteria: str = ""
+
+class WebSearchQuery(BaseModel):
+    query: str
+    top_k: int = 5
 
 class ChunkConfig(BaseModel):
     method: str = "text_semantic"
@@ -468,6 +473,39 @@ async def search_knowledge_base(query: SearchQuery):
     except Exception as e:
         error_trace = traceback.format_exc()
         raise HTTPException(status_code=500, detail=f"搜索知识库失败: {str(e)}\n{error_trace}")
+
+@app.post("/web/search")
+async def search_web(query: WebSearchQuery):
+    """使用 You.com 联网检索作为外部检索源（独立于本地知识库）。
+
+    未配置 YDC_API_KEY 时返回明确提示且不报错；检索失败同样优雅降级为空结果。
+    返回结构与 /kb/search 一致（index / score / text / metadata）。
+    """
+    try:
+        retriever = YouComWebRetriever()
+        if not retriever.available:
+            return {
+                "status": "success",
+                "message": "未配置 YDC_API_KEY，联网检索未启用",
+                "data": []
+            }
+
+        results = retriever.search(query.query, query.top_k)
+
+        if not results:
+            return {
+                "status": "success",
+                "message": "未找到相关内容",
+                "data": []
+            }
+
+        return {
+            "status": "success",
+            "data": results
+        }
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=f"联网检索失败: {str(e)}\n{error_trace}")
 
 @app.post("/kb/delete_documents")
 async def delete_documents(

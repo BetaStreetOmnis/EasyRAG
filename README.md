@@ -491,6 +491,24 @@ context = get_knowledge_context("人工智能发展趋势")
 # 传递给DocuGen进行文档生成...
 ```
 
+**联网检索（You.com 外部检索源）**：
+```python
+import requests
+
+# 独立于本地知识库的外部检索：需先配置环境变量 YDC_API_KEY
+response = requests.post("http://localhost:8028/web/search", json={
+    "query": "最新的检索增强生成研究",
+    "top_k": 5
+})
+
+data = response.json()          # 结构与 /kb/search 一致
+for item in data["data"]:
+    print(f"相关度: {item['score']}  来源: {item['metadata']['url']}")
+    print(item["text"])
+```
+> 未配置 `YDC_API_KEY` 时该端点返回 `{"status": "success", "message": "未配置 YDC_API_KEY，联网检索未启用", "data": []}`，不影响本地检索。
+> 请勿将真实 Key 提交到仓库，建议放在未跟踪的环境变量或本地 `.env` 中。
+
 ### 🔧 高级配置
 
 <details>
@@ -515,6 +533,10 @@ MODEL_CACHE_DIR=./models
 DEFAULT_TOP_K=5
 DEFAULT_SIMILARITY_THRESHOLD=0.3
 MAX_CHUNK_SIZE=500
+
+# 联网检索（可选）：You.com Search API Key，配置后 /web/search 端点可作为
+# 本地知识库之外的外部检索源；留空则该端点返回未启用提示，不影响其它功能。
+YDC_API_KEY=
 
 # 日志配置
 LOG_LEVEL=INFO
