@@ -486,6 +486,24 @@ context = get_knowledge_context("AI development trends")
 # Pass to DocuGen for document generation...
 ```
 
+**Web search (You.com external retriever)**:
+```python
+import requests
+
+# External retrieval, independent of the local KB; requires YDC_API_KEY.
+response = requests.post("http://localhost:8028/web/search", json={
+    "query": "latest retrieval-augmented generation research",
+    "top_k": 5
+})
+
+data = response.json()          # same shape as /kb/search
+for item in data["data"]:
+    print(f"score: {item['score']}  source: {item['metadata']['url']}")
+    print(item["text"])
+```
+> Without `YDC_API_KEY`, the endpoint returns `{"status": "success", "message": "...联网检索未启用", "data": []}` and other features are unaffected.
+> Do not commit your real key to the repo; keep it in an untracked environment variable or local `.env`.
+
 ### 🔧 Advanced Configuration
 
 <details>
@@ -510,6 +528,11 @@ MODEL_CACHE_DIR=./models
 DEFAULT_TOP_K=5
 DEFAULT_SIMILARITY_THRESHOLD=0.3
 MAX_CHUNK_SIZE=500
+
+# Web search (optional): You.com Search API key. With it set, the /web/search
+# endpoint works as an external retriever alongside the local KB; left blank the
+# endpoint returns a "not enabled" message and nothing else is affected.
+YDC_API_KEY=
 
 # Logging Configuration
 LOG_LEVEL=INFO
