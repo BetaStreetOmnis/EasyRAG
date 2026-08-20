@@ -424,6 +424,32 @@ start.bat
 
 ---
 
+## 🧪 前端冒烟测试（Playwright）
+
+仓库内置基于 Playwright 的前端冒烟测试套件，覆盖知识库检索、知识库管理（含文件上传成功/失败）、应用管理（导航/添加/取消）与基础页面渲染。
+
+**前置条件**
+
+- Node.js 18+
+- 执行 `npm ci` 安装依赖
+
+```bash
+# 生成前端静态文件
+npm run build
+
+# 运行冒烟测试（等价于 npx playwright test）
+npm run test:smoke
+```
+
+`playwright.config.js` 会自动使用 Vite preview 在 `127.0.0.1:4173` 启动服务，无需手动启动。
+
+当前用例规模：4 个 spec 文件 / 14 条用例（`smoke` / `kb-search` / `kb-management` / `app-management`）。
+
+---
+
+## 📖 使用说明
+
+### 🏗️ 创建知识库
 ## 📖 使用说明
 
 ### 🏗️ 创建知识库
