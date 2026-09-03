@@ -165,6 +165,44 @@ DELETE /kb/{kb_id}/graph
 
 删除该知识库的图谱数据，不影响已入库 chunk 与向量索引。图谱不存在时返回 `404` 或幂等 `204`，需与现有删除语义保持一致。
 
+## step2 抽取输出契约
+
+`LLMEntityRelationExtractor` 以 chunk 为单位调用 LLM，并要求模型输出如下 JSON 对象：
+
+```json
+{
+  "entities": [
+    {"name": "OpenAI", "type": "组织", "properties": {}}
+  ],
+  "relations": [
+    {
+      "source": "OpenAI",
+      "target": "GPT",
+      "type": "研发",
+      "weight": 0.9,
+      "properties": {}
+    }
+  ]
+}
+```
+
+校验规则：
+
+- `entities` 与 `relations` 必须为数组；空数组合法，`properties` 与 `weight` 可省略。
+- 实体 `name` 与 `type` 必须是非空字符串；同一 chunk 内相同 `(name, type)` 合并并深度合并属性，超限截断。
+- 配置实体类型白名单时，过滤白名单外实体，并级联丢弃任一端点已被过滤的关系。
+- 关系 `source` 与 `target` 必须精确匹配本 chunk 保留实体的 `name`；不匹配的关系直接丢弃，不触发重试。
+- 关系 `type` 必须为非空字符串；`weight` 默认 `1.0`，非法值回退 `1.0`，越界值钳制到 `[0.0, 1.0]`，超限截断并按确定性 ID 去重。
+- 输入文本超过 `max_chunk_chars` 时先截断，再构造提示词。
+
+解析与重试：
+
+- 解析时移除 Markdown 围栏，并截取首个平衡的 JSON 对象。
+- 仅 JSON 解析失败、顶层缺少必需字段或数组类型不符会重试；每次重试会把上一轮错误写入提示词。额外调用最多 `max_retries` 次，耗尽后抛出 `GraphExtractionError`。
+- 端点缺失、白名单过滤、数量截断、权重修正等属于语义修正或丢弃，不消耗重试。
+
+批量抽取 `extract_from_chunks` 逐 chunk 调用单 chunk 逻辑，并复用 `KnowledgeGraph` 的同名同类型实体合并语义聚合 `source_chunk_ids` 与属性。任一 chunk 失败时默认记录 warning 并继续，失败信息与计数保存在 `last_run_stats`；`strict=True` 时立即抛出 `GraphExtractionError`。
+
 ## 分阶段增量计划
 
 | 阶段 | 内容 | 交付边界 |
