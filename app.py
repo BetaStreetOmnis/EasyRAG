@@ -25,7 +25,7 @@ if sys.platform.startswith('win'):
 print(f"系统默认编码: {locale.getpreferredencoding()}")
 print(f"Python默认编码: {sys.getdefaultencoding()}")
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request, BackgroundTasks
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
@@ -42,6 +42,21 @@ from core.web_search.youcom_retriever import YouComWebRetriever
 # 添加进度跟踪字典
 # 格式: {task_id: {"status": "processing/completed/failed", "progress": 0-100, "message": "处理中..."}}
 processing_tasks = {}
+
+# 图谱查询服务懒加载单例，避免每次请求重复打开 SQLite 文件
+_graph_service = None
+
+
+def _get_graph_service():
+    """获取缓存的图谱查询服务实例。"""
+    global _graph_service
+    if _graph_service is None:
+        from core.graph import GraphQueryService, SqliteGraphStore
+
+        graph_db_path = os.environ.get("EASYRAG_GRAPH_DB_PATH", "easyrag_graph.db")
+        _graph_service = GraphQueryService(SqliteGraphStore(graph_db_path))
+    return _graph_service
+
 
 # 导入DeepSeek LLM模型
 from core.llm.local_llm_model import get_llm_model
@@ -173,6 +188,88 @@ async def get_knowledge_base_info(kb_name: str):
     except Exception as e:
         error_trace = traceback.format_exc()
         raise HTTPException(status_code=500, detail=f"获取知识库信息失败: {str(e)}\n{error_trace}")
+
+
+@app.get("/kb/graph/{kb_name}")
+async def get_knowledge_graph(kb_name: str):
+    """获取指定知识库的完整图谱"""
+    try:
+        graph = _get_graph_service().get_graph(kb_name)
+        if graph is None:
+            raise HTTPException(status_code=404, detail=f"知识库 {kb_name} 的图谱不存在")
+        return graph
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=f"获取知识图谱失败: {str(e)}\n{error_trace}")
+
+
+@app.get("/kb/graph/{kb_name}/entities")
+async def list_graph_entities(
+    kb_name: str,
+    type: Optional[str] = Query(None),
+    name: Optional[str] = Query(None),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """分页查询指定知识库的图谱实体"""
+    try:
+        return _get_graph_service().list_entities(
+            kb_name,
+            entity_type=type,
+            name=name,
+            limit=limit,
+            offset=offset,
+        )
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=f"查询图谱实体失败: {str(e)}\n{error_trace}")
+
+
+@app.get("/kb/graph/{kb_name}/entities/{entity_id}")
+async def get_graph_entity(
+    kb_name: str,
+    entity_id: str,
+    direction: str = Query("both", pattern="^(in|out|both)$"),
+):
+    """查询图谱实体详情及一度关系"""
+    try:
+        neighborhood = _get_graph_service().get_entity_neighborhood(
+            kb_name,
+            entity_id,
+            direction=direction,
+        )
+        if neighborhood is None:
+            raise HTTPException(status_code=404, detail=f"实体 {entity_id} 不存在")
+        return neighborhood
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=f"查询图谱实体详情失败: {str(e)}\n{error_trace}")
+
+
+@app.get("/kb/graph/{kb_name}/relations")
+async def list_graph_relations(
+    kb_name: str,
+    entity_id: Optional[str] = Query(None),
+    type: Optional[str] = Query(None),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """分页查询指定知识库的图谱关系"""
+    try:
+        return _get_graph_service().list_relations(
+            kb_name,
+            entity_id=entity_id,
+            relation_type=type,
+            limit=limit,
+            offset=offset,
+        )
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=f"查询图谱关系失败: {str(e)}\n{error_trace}")
 
 @app.delete("/kb/delete/{kb_name}")
 async def delete_knowledge_base(kb_name: str):
