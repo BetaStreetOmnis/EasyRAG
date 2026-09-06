@@ -7,7 +7,7 @@ import os.path
 import time
 import locale
 from urllib.parse import quote, unquote
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Tuple, Union
 
 
 # 设置默认编码为UTF-8
@@ -45,6 +45,7 @@ processing_tasks = {}
 
 # 图谱查询服务懒加载单例，避免每次请求重复打开 SQLite 文件
 _graph_service = None
+_graph_builder = None
 
 
 def _get_graph_service():
@@ -56,6 +57,36 @@ def _get_graph_service():
         graph_db_path = os.environ.get("EASYRAG_GRAPH_DB_PATH", "easyrag_graph.db")
         _graph_service = GraphQueryService(SqliteGraphStore(graph_db_path))
     return _graph_service
+
+
+def _get_graph_builder():
+    """获取缓存的图谱构建服务实例。"""
+    global _graph_builder
+    if _graph_builder is None:
+        from core.graph import GraphBuildService, LLMEntityRelationExtractor, SqliteGraphStore
+
+        graph_db_path = os.environ.get("EASYRAG_GRAPH_DB_PATH", "easyrag_graph.db")
+        _graph_builder = GraphBuildService(
+            LLMEntityRelationExtractor(),
+            SqliteGraphStore(graph_db_path),
+        )
+    return _graph_builder
+
+
+def _collect_graph_chunks(vector_db, kb_name: str) -> List[Tuple[str, str]]:
+    """从向量库元数据中收集待抽取的文本块。"""
+    collection_metadata = vector_db.metadata.get(kb_name, [])
+    if isinstance(collection_metadata, dict):
+        collection_metadata = [
+            collection_metadata[key]
+            for key in sorted(collection_metadata, key=lambda value: int(value))
+        ]
+
+    return [
+        (str(document.get("id", "doc-{}".format(index))), str(document["text"]))
+        for index, document in enumerate(collection_metadata)
+        if isinstance(document, dict) and document.get("text")
+    ]
 
 
 # 导入DeepSeek LLM模型
@@ -270,6 +301,50 @@ async def list_graph_relations(
     except Exception as e:
         error_trace = traceback.format_exc()
         raise HTTPException(status_code=500, detail=f"查询图谱关系失败: {str(e)}\n{error_trace}")
+
+
+@app.post("/kb/graph/{kb_name}/extract")
+async def extract_knowledge_graph(
+    kb_name: str,
+    max_chunks: int = Query(0, ge=0),
+):
+    """从知识库已存储文本构建知识图谱"""
+    from core.graph import GraphExtractionError
+
+    try:
+        global rag_service
+        if not rag_service:
+            rag_service = RAGService()
+
+        if not rag_service.kb_exists(kb_name):
+            raise HTTPException(status_code=404, detail=f"知识库 {kb_name} 不存在")
+
+        vector_db = rag_service.vector_db
+        if kb_name not in vector_db.metadata and not vector_db.load_collection(kb_name):
+            raise HTTPException(
+                status_code=400,
+                detail=f"知识库 {kb_name} 中没有可用的文本块",
+            )
+
+        chunks = _collect_graph_chunks(vector_db, kb_name)
+
+        stats = _get_graph_builder().build(
+            kb_name,
+            _get_graph_builder().limit_chunks(chunks, max_chunks),
+        )
+        return {"status": "success", "data": stats}
+    except HTTPException:
+        raise
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except GraphExtractionError as exc:
+        raise HTTPException(status_code=500, detail=f"图谱抽取失败: {str(exc)}")
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"构建知识图谱失败: {str(e)}\n{error_trace}",
+        )
 
 @app.delete("/kb/delete/{kb_name}")
 async def delete_knowledge_base(kb_name: str):
