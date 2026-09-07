@@ -23,6 +23,17 @@ class GraphQueryService:
             return None
         return graph.to_dict()
 
+    def delete_graph(self, kb_id: str) -> bool:
+        """删除指定知识库的完整图谱。
+
+        Args:
+            kb_id: 知识库 ID。
+
+        Returns:
+            是否确实删除了图谱。
+        """
+        return self._store.delete(kb_id)
+
     def list_entities(
         self,
         kb_id: str,

@@ -221,6 +221,21 @@ async def get_knowledge_base_info(kb_name: str):
         raise HTTPException(status_code=500, detail=f"获取知识库信息失败: {str(e)}\n{error_trace}")
 
 
+@app.delete("/kb/graph/{kb_name}")
+async def delete_knowledge_graph(kb_name: str):
+    """删除指定知识库的完整图谱"""
+    try:
+        graph_deleted = _get_graph_service().delete_graph(kb_name)
+        if not graph_deleted:
+            raise HTTPException(status_code=404, detail=f"知识库 {kb_name} 的图谱不存在")
+        return {"status": "success", "message": f"成功删除知识图谱：{kb_name}"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=f"删除知识图谱失败: {str(e)}\n{error_trace}")
+
+
 @app.get("/kb/graph/{kb_name}")
 async def get_knowledge_graph(kb_name: str):
     """获取指定知识库的完整图谱"""
@@ -356,7 +371,15 @@ async def delete_knowledge_base(kb_name: str):
             
         success = rag_service.delete_knowledge_base(kb_name)
         if success:
-            return {"status": "success", "message": f"成功删除知识库：{kb_name}"}
+            try:
+                graph_deleted = _get_graph_service().delete_graph(kb_name)
+            except Exception:
+                graph_deleted = False
+            return {
+                "status": "success",
+                "message": f"成功删除知识库：{kb_name}",
+                "graph_deleted": graph_deleted,
+            }
         else:
             raise HTTPException(status_code=404, detail=f"知识库 {kb_name} 不存在")
     except Exception as e:
