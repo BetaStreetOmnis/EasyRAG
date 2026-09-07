@@ -160,6 +160,32 @@ graph LR
 </tr>
 </table>
 
+### 🕸️ 知识图谱 API（实验性）
+
+对已入库文本执行 LLM 实体关系抽取，构建并查询 SQLite 持久化知识图谱。
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/kb/graph/{kb_name}/extract` | 从知识库已存储文本构建图谱；`max_chunks` 默认 `0`（全量）；知识库不存在返回 `404`，无向量集合返回 `400` |
+| `GET` | `/kb/graph/{kb_name}` | 获取完整图谱；图谱不存在返回 `404` |
+| `GET` | `/kb/graph/{kb_name}/entities` | 分页查询实体；支持 `type`、`name`、`limit`（`1-500`，默认 `100`）、`offset` |
+| `GET` | `/kb/graph/{kb_name}/entities/{entity_id}` | 查询实体详情及一度关系；支持 `direction=in|out|both`（默认 `both`） |
+| `GET` | `/kb/graph/{kb_name}/relations` | 分页查询关系；支持 `entity_id`、`type`、`limit`、`offset` |
+| `DELETE` | `/kb/graph/{kb_name}` | 删除整个图谱；图谱不存在返回 `404` |
+
+> 💡 删除知识库时，`DELETE /kb/delete/{kb_name}` 会尽力联动清理图谱，响应包含 `graph_deleted` 字段。
+
+```bash
+# 1️⃣ 构建知识图谱（max_chunks=0 表示全量）
+curl -X POST "http://localhost:8028/kb/graph/my_kb/extract?max_chunks=0"
+
+# 2️⃣ 分页查询图谱实体
+curl "http://localhost:8028/kb/graph/my_kb/entities?limit=20&offset=0"
+
+# 3️⃣ 删除指定知识库的完整图谱
+curl -X DELETE "http://localhost:8028/kb/graph/my_kb"
+```
+
 ---
 
 ## 💻 系统要求
