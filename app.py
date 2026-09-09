@@ -221,7 +221,11 @@ async def get_knowledge_base_info(kb_name: str):
         raise HTTPException(status_code=500, detail=f"获取知识库信息失败: {str(e)}\n{error_trace}")
 
 
-@app.delete("/kb/graph/{kb_name}")
+@app.delete(
+    "/kb/graph/{kb_name}",
+    summary="删除指定知识库的完整图谱",
+    tags=["knowledge-graph"],
+)
 async def delete_knowledge_graph(kb_name: str):
     """删除指定知识库的完整图谱"""
     try:
@@ -236,7 +240,11 @@ async def delete_knowledge_graph(kb_name: str):
         raise HTTPException(status_code=500, detail=f"删除知识图谱失败: {str(e)}\n{error_trace}")
 
 
-@app.get("/kb/graph/{kb_name}")
+@app.get(
+    "/kb/graph/{kb_name}",
+    summary="获取指定知识库的完整图谱",
+    tags=["knowledge-graph"],
+)
 async def get_knowledge_graph(kb_name: str):
     """获取指定知识库的完整图谱"""
     try:
@@ -251,7 +259,11 @@ async def get_knowledge_graph(kb_name: str):
         raise HTTPException(status_code=500, detail=f"获取知识图谱失败: {str(e)}\n{error_trace}")
 
 
-@app.get("/kb/graph/{kb_name}/entities")
+@app.get(
+    "/kb/graph/{kb_name}/entities",
+    summary="分页查询图谱实体",
+    tags=["knowledge-graph"],
+)
 async def list_graph_entities(
     kb_name: str,
     type: Optional[str] = Query(None),
@@ -273,7 +285,11 @@ async def list_graph_entities(
         raise HTTPException(status_code=500, detail=f"查询图谱实体失败: {str(e)}\n{error_trace}")
 
 
-@app.get("/kb/graph/{kb_name}/entities/{entity_id}")
+@app.get(
+    "/kb/graph/{kb_name}/entities/{entity_id}",
+    summary="查询实体详情及一度关系",
+    tags=["knowledge-graph"],
+)
 async def get_graph_entity(
     kb_name: str,
     entity_id: str,
@@ -296,7 +312,11 @@ async def get_graph_entity(
         raise HTTPException(status_code=500, detail=f"查询图谱实体详情失败: {str(e)}\n{error_trace}")
 
 
-@app.get("/kb/graph/{kb_name}/relations")
+@app.get(
+    "/kb/graph/{kb_name}/relations",
+    summary="分页查询图谱关系",
+    tags=["knowledge-graph"],
+)
 async def list_graph_relations(
     kb_name: str,
     entity_id: Optional[str] = Query(None),
@@ -318,7 +338,11 @@ async def list_graph_relations(
         raise HTTPException(status_code=500, detail=f"查询图谱关系失败: {str(e)}\n{error_trace}")
 
 
-@app.post("/kb/graph/{kb_name}/extract")
+@app.post(
+    "/kb/graph/{kb_name}/extract",
+    summary="从知识库文本构建知识图谱",
+    tags=["knowledge-graph"],
+)
 async def extract_knowledge_graph(
     kb_name: str,
     max_chunks: int = Query(0, ge=0),
