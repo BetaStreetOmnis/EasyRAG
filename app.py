@@ -135,7 +135,19 @@ class ChatQuery(BaseModel):
     temperature: float = 0.1
 
 # 初始化FastAPI应用
-app = FastAPI(title="知识库管理API", description="提供知识库管理和检索的RESTful API")
+TAGS_METADATA = [
+    {
+        "name": "knowledge-graph",
+        "description": "实验性知识图谱功能：实体/关系抽取、查询、构建触发、删除联动等",
+        "order": 999,
+    }
+]
+
+app = FastAPI(
+    title="知识库管理API",
+    description="提供知识库管理和检索的RESTful API",
+    openapi_tags=TAGS_METADATA,
+)
 
 # 添加CORS中间件
 app.add_middleware(
