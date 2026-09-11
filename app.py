@@ -237,6 +237,16 @@ async def get_knowledge_base_info(kb_name: str):
     "/kb/graph/{kb_name}",
     summary="删除指定知识库的完整图谱",
     tags=["knowledge-graph"],
+    responses={
+        "404": {
+            "description": "图谱不存在",
+            "content": {"application/json": {"example": {"detail": "知识库 xxx 的图谱不存在"}}},
+        },
+        "500": {
+            "description": "服务器内部错误",
+            "content": {"application/json": {"example": {"detail": "删除知识图谱失败"}}},
+        },
+    },
 )
 async def delete_knowledge_graph(kb_name: str):
     """删除指定知识库的完整图谱"""
@@ -256,6 +266,16 @@ async def delete_knowledge_graph(kb_name: str):
     "/kb/graph/{kb_name}",
     summary="获取指定知识库的完整图谱",
     tags=["knowledge-graph"],
+    responses={
+        "404": {
+            "description": "图谱不存在",
+            "content": {"application/json": {"example": {"detail": "知识库 xxx 的图谱不存在"}}},
+        },
+        "500": {
+            "description": "服务器内部错误",
+            "content": {"application/json": {"example": {"detail": "获取知识图谱失败"}}},
+        },
+    },
 )
 async def get_knowledge_graph(kb_name: str):
     """获取指定知识库的完整图谱"""
@@ -275,6 +295,12 @@ async def get_knowledge_graph(kb_name: str):
     "/kb/graph/{kb_name}/entities",
     summary="分页查询图谱实体",
     tags=["knowledge-graph"],
+    responses={
+        "500": {
+            "description": "服务器内部错误",
+            "content": {"application/json": {"example": {"detail": "查询图谱实体失败"}}},
+        },
+    },
 )
 async def list_graph_entities(
     kb_name: str,
@@ -301,6 +327,16 @@ async def list_graph_entities(
     "/kb/graph/{kb_name}/entities/{entity_id}",
     summary="查询实体详情及一度关系",
     tags=["knowledge-graph"],
+    responses={
+        "404": {
+            "description": "实体不存在",
+            "content": {"application/json": {"example": {"detail": "实体 xxx 不存在"}}},
+        },
+        "500": {
+            "description": "服务器内部错误",
+            "content": {"application/json": {"example": {"detail": "查询图谱实体详情失败"}}},
+        },
+    },
 )
 async def get_graph_entity(
     kb_name: str,
@@ -328,6 +364,12 @@ async def get_graph_entity(
     "/kb/graph/{kb_name}/relations",
     summary="分页查询图谱关系",
     tags=["knowledge-graph"],
+    responses={
+        "500": {
+            "description": "服务器内部错误",
+            "content": {"application/json": {"example": {"detail": "查询图谱关系失败"}}},
+        },
+    },
 )
 async def list_graph_relations(
     kb_name: str,
@@ -354,6 +396,20 @@ async def list_graph_relations(
     "/kb/graph/{kb_name}/extract",
     summary="从知识库文本构建知识图谱",
     tags=["knowledge-graph"],
+    responses={
+        "404": {
+            "description": "知识库不存在",
+            "content": {"application/json": {"example": {"detail": "知识库 xxx 不存在"}}},
+        },
+        "400": {
+            "description": "无可用文本块/抽取参数错误",
+            "content": {"application/json": {"example": {"detail": "知识库 xxx 中没有可用的文本块或抽取参数错误"}}},
+        },
+        "500": {
+            "description": "抽取失败",
+            "content": {"application/json": {"example": {"detail": "图谱抽取失败"}}},
+        },
+    },
 )
 async def extract_knowledge_graph(
     kb_name: str,
