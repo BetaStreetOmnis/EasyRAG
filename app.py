@@ -30,6 +30,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel
+from core.graph import schemas as graph_schemas  # noqa: E402
 
 # 确保当前目录在sys.path中
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -235,6 +236,7 @@ async def get_knowledge_base_info(kb_name: str):
 
 @app.delete(
     "/kb/graph/{kb_name}",
+    response_model=graph_schemas.GraphDeleteResponse,
     summary="删除指定知识库的完整图谱",
     tags=["knowledge-graph"],
     responses={
@@ -264,6 +266,7 @@ async def delete_knowledge_graph(kb_name: str):
 
 @app.get(
     "/kb/graph/{kb_name}",
+    response_model=graph_schemas.GraphDataResponse,
     summary="获取指定知识库的完整图谱",
     tags=["knowledge-graph"],
     responses={
@@ -293,6 +296,7 @@ async def get_knowledge_graph(kb_name: str):
 
 @app.get(
     "/kb/graph/{kb_name}/entities",
+    response_model=graph_schemas.GraphEntityListResponse,
     summary="分页查询图谱实体",
     tags=["knowledge-graph"],
     responses={
@@ -325,6 +329,7 @@ async def list_graph_entities(
 
 @app.get(
     "/kb/graph/{kb_name}/entities/{entity_id}",
+    response_model=graph_schemas.GraphEntityDetailResponse,
     summary="查询实体详情及一度关系",
     tags=["knowledge-graph"],
     responses={
@@ -362,6 +367,7 @@ async def get_graph_entity(
 
 @app.get(
     "/kb/graph/{kb_name}/relations",
+    response_model=graph_schemas.GraphRelationListResponse,
     summary="分页查询图谱关系",
     tags=["knowledge-graph"],
     responses={
@@ -394,6 +400,7 @@ async def list_graph_relations(
 
 @app.post(
     "/kb/graph/{kb_name}/extract",
+    response_model=graph_schemas.GraphBuildResponse,
     summary="从知识库文本构建知识图谱",
     tags=["knowledge-graph"],
     responses={
