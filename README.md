@@ -186,6 +186,22 @@ curl "http://localhost:8028/kb/graph/my_kb/entities?limit=20&offset=0"
 curl -X DELETE "http://localhost:8028/kb/graph/my_kb"
 ```
 
+#### 📋 响应模型与 OpenAPI 示例
+
+图谱端点的返回值由 9 个 Pydantic 响应模型强类型描述，对应模型为：
+
+| 响应模型 | 用途 |
+|----------|------|
+| `GraphEntityResponse` / `GraphRelationResponse` | 单个实体 / 关系 |
+| `GraphDataResponse` / `GraphDeleteResponse` | 完整图谱 / 删除结果 |
+| `GraphEntityListResponse` / `GraphRelationListResponse` | 实体 / 关系列表 |
+| `GraphEntityDetailResponse` | 实体详情及一度关系 |
+| `GraphBuildStats` / `GraphBuildResponse` | 构建统计 / 构建结果 |
+
+启动服务后，可在 Swagger UI（`/docs`）查看各端点自动生成的 Schema 与
+「Example Value」真实感中文示例；原始 Schema 可从 `/openapi.json` 获取。
+示例值仅用于文档展示，不影响运行时序列化行为。
+
 ---
 
 ## 💻 系统要求
