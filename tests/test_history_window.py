@@ -1,6 +1,28 @@
+import sys
 import unittest
+from types import ModuleType
 
-from core.memory.history_window import trim_history
+from pydantic import ValidationError
+
+from core.memory.history_window import (
+    DEFAULT_MAX_MESSAGE_CHARS,
+    DEFAULT_MAX_TURNS,
+    resolve_limits,
+    trim_history,
+)
+
+
+for module_name, attributes in {
+    "main": {"RAGService": object, "DocumentProcessor": object},
+    "core.llm.local_llm_model": {"get_llm_model": lambda *args, **kwargs: None},
+    "core.chunker.chunker_main": {"ChunkMethod": object},
+}.items():
+    module = ModuleType(module_name)
+    for attribute_name, attribute_value in attributes.items():
+        setattr(module, attribute_name, attribute_value)
+    sys.modules.setdefault(module_name, module)
+
+from app import ChatQuery  # noqa: E402
 
 
 class TestTrimHistory(unittest.TestCase):
@@ -88,6 +110,74 @@ class TestTrimHistory(unittest.TestCase):
             {"role": "assistant", "content": "回答"},
         ]
         self.assertEqual(trim_history(history, max_turns=0), [])
+
+    def test_resolve_limits_defaults(self):
+        # 未提供有效覆盖值时保持既有默认行为。
+        expected_defaults = {
+            "max_turns": DEFAULT_MAX_TURNS,
+            "max_message_chars": DEFAULT_MAX_MESSAGE_CHARS,
+        }
+        self.assertEqual(resolve_limits(), expected_defaults)
+        self.assertEqual(resolve_limits(None, None), {
+            "max_turns": 10,
+            "max_message_chars": 8000,
+        })
+
+    def test_resolve_limits_overrides(self):
+        # 轮数与字符上限均可独立或同时覆盖。
+        self.assertEqual(resolve_limits(max_turns=3), {
+            "max_turns": 3,
+            "max_message_chars": 8000,
+        })
+        self.assertEqual(resolve_limits(max_message_chars=123), {
+            "max_turns": 10,
+            "max_message_chars": 123,
+        })
+        self.assertEqual(resolve_limits(5, 456), {
+            "max_turns": 5,
+            "max_message_chars": 456,
+        })
+
+    def test_resolve_limits_falls_back_for_invalid_values(self):
+        # 非整数、越界值均回退默认值，供无校验调用方兜底。
+        defaults = {
+            "max_turns": 10,
+            "max_message_chars": 8000,
+        }
+        for invalid_turns in (0, -1, 101, "10", True):
+            self.assertEqual(resolve_limits(max_turns=invalid_turns), defaults)
+        for invalid_chars in (99, -100, 100001, "8000", False):
+            self.assertEqual(resolve_limits(max_message_chars=invalid_chars), defaults)
+
+    def test_chat_query_history_limit_defaults(self):
+        # 兼容旧请求：未传新增字段时保持 None。
+        query = ChatQuery(kb_name="test", query="问题")
+        self.assertIsNone(query.history_max_turns)
+        self.assertIsNone(query.history_max_chars)
+
+    def test_chat_query_history_limit_validation(self):
+        # 新增字段必须在请求层校验取值范围。
+        with self.assertRaises(ValidationError):
+            ChatQuery(kb_name="test", query="问题", history_max_turns=0)
+        with self.assertRaises(ValidationError):
+            ChatQuery(kb_name="test", query="问题", history_max_turns=101)
+        with self.assertRaises(ValidationError):
+            ChatQuery(kb_name="test", query="问题", history_max_chars=99)
+        with self.assertRaises(ValidationError):
+            ChatQuery(kb_name="test", query="问题", history_max_chars=100001)
+
+    def test_resolve_limits_with_trim_history(self):
+        # 端点可安全将解析结果作为 kwargs 传给窗口化函数。
+        history = [
+            {"role": "user", "content": "u" * 4},
+            {"role": "assistant", "content": "a" * 4},
+            {"role": "user", "content": "latest"},
+            {"role": "assistant", "content": "answer"},
+        ]
+        self.assertEqual(
+            trim_history(history, **resolve_limits(1, 100)),
+            history[-2:],
+        )
 
 
 if __name__ == "__main__":

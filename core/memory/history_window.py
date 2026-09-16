@@ -5,6 +5,23 @@ DEFAULT_MAX_TURNS = 10
 DEFAULT_MAX_MESSAGE_CHARS = 8000
 
 
+def resolve_limits(max_turns=None, max_message_chars=None) -> Dict[str, int]:
+    """解析调用方指定的历史窗口上限，非法值回退默认配置。"""
+    resolved_limits = {
+        "max_turns": DEFAULT_MAX_TURNS,
+        "max_message_chars": DEFAULT_MAX_MESSAGE_CHARS,
+    }
+    if isinstance(max_turns, int) and not isinstance(max_turns, bool) and 1 <= max_turns <= 100:
+        resolved_limits["max_turns"] = max_turns
+    if (
+        isinstance(max_message_chars, int)
+        and not isinstance(max_message_chars, bool)
+        and 100 <= max_message_chars <= 100000
+    ):
+        resolved_limits["max_message_chars"] = max_message_chars
+    return resolved_limits
+
+
 def trim_history(history, max_turns=DEFAULT_MAX_TURNS,
                  max_message_chars=DEFAULT_MAX_MESSAGE_CHARS) -> List[Dict[str, str]]:
     """过滤、配对并窗口化服务端接收到的对话历史。"""
