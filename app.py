@@ -29,9 +29,9 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Reques
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from core.graph import schemas as graph_schemas  # noqa: E402
-from core.memory.history_window import trim_history  # noqa: E402
+from core.memory.history_window import resolve_limits, trim_history  # noqa: E402
 
 # 确保当前目录在sys.path中
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -135,6 +135,8 @@ class ChatQuery(BaseModel):
     history: List[Dict[str, str]] = []
     top_k: int = 3
     temperature: float = 0.1
+    history_max_turns: Optional[int] = Field(default=None, ge=1, le=100)
+    history_max_chars: Optional[int] = Field(default=None, ge=100, le=100000)
 
 # 初始化FastAPI应用
 TAGS_METADATA = [
@@ -1127,7 +1129,10 @@ async def chat_with_knowledge_base(query: ChatQuery):
             return {"status": "error", "message": f"知识库 {query.kb_name} 不存在"}
             
         # 获取历史对话格式化
-        history_msgs = trim_history(query.history)
+        history_msgs = trim_history(
+            query.history,
+            **resolve_limits(query.history_max_turns, query.history_max_chars),
+        )
         
         # 调用RAG服务进行知识库对话
         result = rag_service.chat_with_kb(
@@ -1161,7 +1166,10 @@ async def chat_with_knowledge_base_stream(query: ChatQuery):
                 return
                 
             # 获取历史对话格式化
-            history_msgs = trim_history(query.history)
+            history_msgs = trim_history(
+                query.history,
+                **resolve_limits(query.history_max_turns, query.history_max_chars),
+            )
             
             # 调用RAG服务进行知识库对话（流式）
             for chunk in rag_service.chat_with_kb(

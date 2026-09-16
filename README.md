@@ -556,6 +556,8 @@ for item in data["data"]:
 - 服务端默认只保留最近 10 轮完整对话，单条消息超过 8000 字符时会被截断。
 - 统一由 `core/memory/history_window.py` 的 `trim_history()` 控制过滤、配对与窗口化行为。
 - `/kb/chat` 与 `/kb/chat_stream` 均已接入，避免长会话导致模型提示无限增长。
+- 请求可选字段 `history_max_turns`（1-100）与 `history_max_chars`（100-100000）可分别覆盖保留轮数和单条消息长度。
+- 未传递这两个字段时，仍使用默认值 10 轮与 8000 字符。
 
 ### 🔧 高级配置
 
