@@ -559,6 +559,20 @@ for item in data["data"]:
 - 请求可选字段 `history_max_turns`（1-100）与 `history_max_chars`（100-100000）可分别覆盖保留轮数和单条消息长度。
 - 未传递这两个字段时，仍使用默认值 10 轮与 8000 字符。
 
+### 服务端会话存储（实验性）
+
+- `core/memory/session_store.py` 提供线程安全的纯内存会话存储。
+- 内置 LRU 会话淘汰与单会话消息上限，进程重启后数据不会保留。
+- 当前为纯库，未接入任何端点；接线计划见后续 PR。
+
+```python
+from core.memory.session_store import InMemorySessionStore
+
+store = InMemorySessionStore()
+store.append("kb", "session-id", "user", "你好")
+history = store.get_history("kb", "session-id")
+```
+
 ### 🔧 高级配置
 
 <details>
