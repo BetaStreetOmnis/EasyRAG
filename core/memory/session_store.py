@@ -2,9 +2,27 @@ import threading
 from collections import OrderedDict
 from typing import Dict, List, Tuple
 
+from core.memory.history_window import resolve_limits, trim_history
+
 
 DEFAULT_MAX_SESSIONS = 1000
 DEFAULT_MAX_MESSAGES_PER_SESSION = 200
+
+
+def session_history_messages(
+    store,
+    kb_name,
+    session_id,
+    history_max_turns=None,
+    history_max_chars=None,
+):
+    """从会话存储读取并窗口化历史，返回新列表。"""
+    if store is None:
+        raise ValueError("store 不能为 None")
+    return trim_history(
+        store.get_history(kb_name, session_id),
+        **resolve_limits(history_max_turns, history_max_chars),
+    )
 
 
 class InMemorySessionStore:

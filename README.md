@@ -563,7 +563,11 @@ for item in data["data"]:
 
 - `core/memory/session_store.py` 提供线程安全的纯内存会话存储。
 - 内置 LRU 会话淘汰与单会话消息上限，进程重启后数据不会保留。
-- 当前为纯库，未接入任何端点；接线计划见后续 PR。
+- `/kb/chat` 与 `/kb/chat_stream` 支持可选 `session_id`（1-128 字符），按 `kb_name + session_id` 隔离历史。
+- 传入 `session_id` 时，服务端会话是唯一事实源：请求体中的 `history` 会被忽略，读取时同样应用历史窗口参数。
+- 只有当前请求成功完成后，服务端才追加本轮 `user` 与最终 `assistant` 消息；失败、异常或流中断不会写入。
+- 未传 `session_id` 或传 `null` 时，完全保留原有客户端传入 `history` 的行为。
+- 会话数据仅在当前 API 进程内存中有效，重启后丢失；该能力当前为实验性设计。
 
 ```python
 from core.memory.session_store import InMemorySessionStore
