@@ -32,6 +32,7 @@ from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from core.graph import schemas as graph_schemas  # noqa: E402
 from core.memory.history_window import resolve_limits, trim_history  # noqa: E402
+from core.memory.session_store import InMemorySessionStore, session_history_messages  # noqa: E402
 
 # 确保当前目录在sys.path中
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -133,10 +134,15 @@ class ChatQuery(BaseModel):
     kb_name: str
     query: str
     history: List[Dict[str, str]] = []
+    session_id: Optional[str] = Field(default=None, min_length=1, max_length=128)
     top_k: int = 3
     temperature: float = 0.1
     history_max_turns: Optional[int] = Field(default=None, ge=1, le=100)
     history_max_chars: Optional[int] = Field(default=None, ge=100, le=100000)
+
+
+# 实验性进程内会话存储；服务重启后历史会丢失。
+SESSION_STORE = InMemorySessionStore()
 
 # 初始化FastAPI应用
 TAGS_METADATA = [
@@ -1127,12 +1133,20 @@ async def chat_with_knowledge_base(query: ChatQuery):
         # 检查知识库是否存在
         if not rag_service.kb_exists(query.kb_name):
             return {"status": "error", "message": f"知识库 {query.kb_name} 不存在"}
-            
-        # 获取历史对话格式化
-        history_msgs = trim_history(
-            query.history,
-            **resolve_limits(query.history_max_turns, query.history_max_chars),
-        )
+
+        if query.session_id is None:
+            history_msgs = trim_history(
+                query.history,
+                **resolve_limits(query.history_max_turns, query.history_max_chars),
+            )
+        else:
+            history_msgs = session_history_messages(
+                SESSION_STORE,
+                query.kb_name,
+                query.session_id,
+                query.history_max_turns,
+                query.history_max_chars,
+            )
         
         # 调用RAG服务进行知识库对话
         result = rag_service.chat_with_kb(
@@ -1143,6 +1157,9 @@ async def chat_with_knowledge_base(query: ChatQuery):
             temperature=query.temperature
         )
         
+        if query.session_id is not None and result:
+            SESSION_STORE.append(query.kb_name, query.session_id, "user", query.query)
+            SESSION_STORE.append(query.kb_name, query.session_id, "assistant", result)
         return {"status": "success", "answer": result}
     except Exception as e:
         error_msg = f"与知识库对话失败: {str(e)}"
@@ -1164,14 +1181,23 @@ async def chat_with_knowledge_base_stream(query: ChatQuery):
             if not rag_service.kb_exists(query.kb_name):
                 yield f"错误：知识库 {query.kb_name} 不存在"
                 return
-                
-            # 获取历史对话格式化
-            history_msgs = trim_history(
-                query.history,
-                **resolve_limits(query.history_max_turns, query.history_max_chars),
-            )
+
+            if query.session_id is None:
+                history_msgs = trim_history(
+                    query.history,
+                    **resolve_limits(query.history_max_turns, query.history_max_chars),
+                )
+            else:
+                history_msgs = session_history_messages(
+                    SESSION_STORE,
+                    query.kb_name,
+                    query.session_id,
+                    query.history_max_turns,
+                    query.history_max_chars,
+                )
             
             # 调用RAG服务进行知识库对话（流式）
+            answer_chunks = []
             for chunk in rag_service.chat_with_kb(
                 kb_name=query.kb_name,
                 query=query.query,
@@ -1179,7 +1205,12 @@ async def chat_with_knowledge_base_stream(query: ChatQuery):
                 top_k=query.top_k,
                 temperature=query.temperature
             ):
+                answer_chunks.append(chunk)
                 yield chunk
+            answer = "".join(answer_chunks)
+            if query.session_id is not None and answer:
+                SESSION_STORE.append(query.kb_name, query.session_id, "user", query.query)
+                SESSION_STORE.append(query.kb_name, query.session_id, "assistant", answer)
                 
         except Exception as e:
             error_msg = f"与知识库对话失败: {str(e)}"
