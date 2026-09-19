@@ -222,5 +222,93 @@ class TestSessionChatEndpoints(unittest.TestCase):
             self.assertEqual(response.status_code, 422)
 
 
+class TestSessionHistoryEndpoints(unittest.TestCase):
+    def setUp(self):
+        SESSION_STORE.clear_all()
+        self.client = TestClient(app_module.app)
+
+    def tearDown(self):
+        SESSION_STORE.clear_all()
+
+    def test_get_missing_session_returns_empty_history(self):
+        response = self.client.get("/kb/session/history/kb/session")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {
+            "status": "success",
+            "data": {"messages": [], "count": 0},
+        })
+
+    def test_get_returns_session_messages(self):
+        SESSION_STORE.append("kb", "session", "user", "问题")
+        SESSION_STORE.append("kb", "session", "assistant", "回答")
+        response = self.client.get("/kb/session/history/kb/session")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {
+            "status": "success",
+            "data": {
+                "messages": [
+                    {"role": "user", "content": "问题"},
+                    {"role": "assistant", "content": "回答"},
+                ],
+                "count": 2,
+            },
+        })
+
+    def test_get_isolates_sessions_by_session_and_kb(self):
+        SESSION_STORE.append("kb", "session-1", "user", "第一会话")
+        SESSION_STORE.append("kb", "session-2", "user", "第二会话")
+        SESSION_STORE.append("other-kb", "session-1", "user", "其他知识库")
+
+        response = self.client.get("/kb/session/history/kb/session-1")
+        self.assertEqual(response.json()["data"], {
+            "messages": [{"role": "user", "content": "第一会话"}],
+            "count": 1,
+        })
+
+    def test_get_invalid_session_id_returns_422(self):
+        response = self.client.get(f"/kb/session/history/kb/{'s' * 129}")
+        self.assertEqual(response.status_code, 422)
+
+    def test_delete_clears_history_and_new_messages_are_retained(self):
+        SESSION_STORE.append("kb", "session", "user", "旧问题")
+        delete_response = self.client.delete("/kb/session/history/kb/session")
+        self.assertEqual(delete_response.status_code, 200)
+
+        empty_response = self.client.get("/kb/session/history/kb/session")
+        self.assertEqual(empty_response.json()["data"], {"messages": [], "count": 0})
+
+        SESSION_STORE.append("kb", "session", "user", "新问题")
+        response = self.client.get("/kb/session/history/kb/session")
+        self.assertEqual(response.json()["data"], {
+            "messages": [{"role": "user", "content": "新问题"}],
+            "count": 1,
+        })
+
+    def test_delete_is_idempotent(self):
+        first = self.client.delete("/kb/session/history/kb/session")
+        second = self.client.delete("/kb/session/history/kb/session")
+        expected = {"status": "success", "data": {"cleared": True}}
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.json(), expected)
+        self.assertEqual(second.json(), expected)
+
+    def test_delete_invalid_session_id_returns_422(self):
+        response = self.client.delete(f"/kb/session/history/kb/{'s' * 129}")
+        self.assertEqual(response.status_code, 422)
+
+    def test_missing_kb_uses_store_level_semantics(self):
+        get_response = self.client.get("/kb/session/history/missing/session")
+        delete_response = self.client.delete("/kb/session/history/missing/session")
+        self.assertEqual(get_response.json(), {
+            "status": "success",
+            "data": {"messages": [], "count": 0},
+        })
+        self.assertEqual(delete_response.json(), {
+            "status": "success",
+            "data": {"cleared": True},
+        })
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -25,7 +25,7 @@ if sys.platform.startswith('win'):
 print(f"系统默认编码: {locale.getpreferredencoding()}")
 print(f"Python默认编码: {sys.getdefaultencoding()}")
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request, BackgroundTasks, Query
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request, BackgroundTasks, Path, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
@@ -1219,6 +1219,27 @@ async def chat_with_knowledge_base_stream(query: ChatQuery):
             yield error_msg
     
     return StreamingResponse(stream_response(), media_type="text/plain")
+
+
+@app.get("/kb/session/history/{kb_name}/{session_id}")
+async def get_session_history(
+    kb_name: str,
+    session_id: str = Path(min_length=1, max_length=128),
+):
+    """获取服务端会话历史（不校验知识库是否存在）"""
+    messages = SESSION_STORE.get_history(kb_name, session_id)
+    return {"status": "success", "data": {"messages": messages, "count": len(messages)}}
+
+
+@app.delete("/kb/session/history/{kb_name}/{session_id}")
+async def clear_session_history(
+    kb_name: str,
+    session_id: str = Path(min_length=1, max_length=128),
+):
+    """清除服务端会话历史（幂等，不校验知识库是否存在）"""
+    SESSION_STORE.clear(kb_name, session_id)
+    return {"status": "success", "data": {"cleared": True}}
+
 
 class ImportanceUpdate(BaseModel):
     kb_name: str

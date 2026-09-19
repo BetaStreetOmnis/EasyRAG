@@ -568,6 +568,8 @@ for item in data["data"]:
 - 只有当前请求成功完成后，服务端才追加本轮 `user` 与最终 `assistant` 消息；失败、异常或流中断不会写入。
 - 未传 `session_id` 或传 `null` 时，完全保留原有客户端传入 `history` 的行为。
 - 会话数据仅在当前 API 进程内存中有效，重启后丢失；该能力当前为实验性设计。
+- `GET /kb/session/history/{kb_name}/{session_id}` 可查看会话历史，会话不存在时返回空列表。
+- `DELETE /kb/session/history/{kb_name}/{session_id}` 可幂等清除会话历史；两个端点均不校验知识库是否存在。
 
 ```python
 from core.memory.session_store import InMemorySessionStore
@@ -575,6 +577,11 @@ from core.memory.session_store import InMemorySessionStore
 store = InMemorySessionStore()
 store.append("kb", "session-id", "user", "你好")
 history = store.get_history("kb", "session-id")
+```
+
+```bash
+curl http://localhost:8028/kb/session/history/kb/session-id
+curl -X DELETE http://localhost:8028/kb/session/history/kb/session-id
 ```
 
 ### 🔧 高级配置
