@@ -1241,6 +1241,12 @@ async def clear_session_history(
     return {"status": "success", "data": {"cleared": True}}
 
 
+@app.get("/kb/session/stats")
+async def get_session_stats():
+    """返回服务端会话存储统计（会话数与消息总数）"""
+    return {"status": "success", "data": SESSION_STORE.stats()}
+
+
 class ImportanceUpdate(BaseModel):
     kb_name: str
     file_name: str

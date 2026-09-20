@@ -310,5 +310,39 @@ class TestSessionHistoryEndpoints(unittest.TestCase):
         })
 
 
+class TestSessionStatsEndpoints(unittest.TestCase):
+    def setUp(self):
+        SESSION_STORE.clear_all()
+        self.client = TestClient(app_module.app)
+
+    def tearDown(self):
+        SESSION_STORE.clear_all()
+
+    def test_empty_store_returns_zero_counts(self):
+        response = self.client.get("/kb/session/stats")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {
+            "status": "success",
+            "data": {"sessions": 0, "messages": 0},
+        })
+
+    def test_returns_session_and_message_counts(self):
+        SESSION_STORE.append("kb", "s1", "user", "第一问题")
+        SESSION_STORE.append("kb", "s2", "user", "第二问题")
+        SESSION_STORE.append("kb", "s2", "assistant", "第二回答")
+        response = self.client.get("/kb/session/stats")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["data"], {"sessions": 2, "messages": 3})
+
+    def test_delete_history_reduces_stats(self):
+        SESSION_STORE.append("kb", "s1", "user", "问题一")
+        SESSION_STORE.append("kb", "s2", "user", "问题二")
+        SESSION_STORE.append("kb", "s2", "assistant", "回答二")
+        delete_response = self.client.delete("/kb/session/history/kb/s1")
+        self.assertEqual(delete_response.status_code, 200)
+        response = self.client.get("/kb/session/stats")
+        self.assertEqual(response.json()["data"], {"sessions": 1, "messages": 2})
+
+
 if __name__ == "__main__":
     unittest.main()
