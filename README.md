@@ -570,6 +570,7 @@ for item in data["data"]:
 - 会话数据仅在当前 API 进程内存中有效，重启后丢失；该能力当前为实验性设计。
 - `GET /kb/session/history/{kb_name}/{session_id}` 可查看会话历史，会话不存在时返回空列表。
 - `DELETE /kb/session/history/{kb_name}/{session_id}` 可幂等清除会话历史；两个端点均不校验知识库是否存在。
+- `GET /kb/session/stats` 返回会话存储统计（会话数与消息总数）。
 
 ```python
 from core.memory.session_store import InMemorySessionStore
@@ -582,6 +583,7 @@ history = store.get_history("kb", "session-id")
 ```bash
 curl http://localhost:8028/kb/session/history/kb/session-id
 curl -X DELETE http://localhost:8028/kb/session/history/kb/session-id
+curl http://localhost:8028/kb/session/stats
 ```
 
 ### 🔧 高级配置
