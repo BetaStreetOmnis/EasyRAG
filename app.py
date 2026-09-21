@@ -150,6 +150,11 @@ TAGS_METADATA = [
         "name": "knowledge-graph",
         "description": "实验性知识图谱功能：实体/关系抽取、查询、构建触发、删除联动等",
         "order": 999,
+    },
+    {
+        "name": "session",
+        "description": "实验性服务端会话记忆：会话历史查询、清除与存储统计",
+        "order": 999,
     }
 ]
 
@@ -1221,7 +1226,11 @@ async def chat_with_knowledge_base_stream(query: ChatQuery):
     return StreamingResponse(stream_response(), media_type="text/plain")
 
 
-@app.get("/kb/session/history/{kb_name}/{session_id}")
+@app.get(
+    "/kb/session/history/{kb_name}/{session_id}",
+    summary="查询服务端会话历史",
+    tags=["session"],
+)
 async def get_session_history(
     kb_name: str,
     session_id: str = Path(min_length=1, max_length=128),
@@ -1231,7 +1240,11 @@ async def get_session_history(
     return {"status": "success", "data": {"messages": messages, "count": len(messages)}}
 
 
-@app.delete("/kb/session/history/{kb_name}/{session_id}")
+@app.delete(
+    "/kb/session/history/{kb_name}/{session_id}",
+    summary="清除服务端会话历史",
+    tags=["session"],
+)
 async def clear_session_history(
     kb_name: str,
     session_id: str = Path(min_length=1, max_length=128),
@@ -1241,7 +1254,11 @@ async def clear_session_history(
     return {"status": "success", "data": {"cleared": True}}
 
 
-@app.get("/kb/session/stats")
+@app.get(
+    "/kb/session/stats",
+    summary="查询服务端会话存储统计",
+    tags=["session"],
+)
 async def get_session_stats():
     """返回服务端会话存储统计（会话数与消息总数）"""
     return {"status": "success", "data": SESSION_STORE.stats()}
