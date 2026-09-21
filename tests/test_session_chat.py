@@ -344,5 +344,39 @@ class TestSessionStatsEndpoints(unittest.TestCase):
         self.assertEqual(response.json()["data"], {"sessions": 1, "messages": 2})
 
 
+class TestSessionOpenAPITags(unittest.TestCase):
+    def setUp(self):
+        self.client = TestClient(app_module.app)
+
+    def test_session_history_endpoints_use_session_tag(self):
+        paths = self.client.get("/openapi.json").json()["paths"]
+        history_path = paths["/kb/session/history/{kb_name}/{session_id}"]
+        self.assertEqual(history_path["get"]["tags"], ["session"])
+        self.assertEqual(history_path["delete"]["tags"], ["session"])
+
+    def test_session_stats_endpoint_uses_session_tag(self):
+        paths = self.client.get("/openapi.json").json()["paths"]
+        stats_path = paths["/kb/session/stats"]
+        self.assertEqual(stats_path["get"]["tags"], ["session"])
+
+    def test_session_endpoints_have_summaries(self):
+        paths = self.client.get("/openapi.json").json()["paths"]
+        history_path = paths["/kb/session/history/{kb_name}/{session_id}"]
+        operations = [
+            history_path["get"],
+            history_path["delete"],
+            paths["/kb/session/stats"]["get"],
+        ]
+        for operation in operations:
+            self.assertIsInstance(operation["summary"], str)
+            self.assertTrue(operation["summary"])
+
+    def test_openapi_defines_session_tag(self):
+        tags = self.client.get("/openapi.json").json()["tags"]
+        session_tag = next(tag for tag in tags if tag["name"] == "session")
+        self.assertIsInstance(session_tag["description"], str)
+        self.assertTrue(session_tag["description"])
+
+
 if __name__ == "__main__":
     unittest.main()
