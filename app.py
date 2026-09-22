@@ -155,6 +155,11 @@ TAGS_METADATA = [
         "name": "session",
         "description": "实验性服务端会话记忆：会话历史查询、清除与存储统计",
         "order": 999,
+    },
+    {
+        "name": "chat",
+        "description": "知识库对话：同步回答与流式响应，可选服务端会话记忆",
+        "order": 999,
     }
 ]
 
@@ -1128,7 +1133,11 @@ async def replace_file(
         raise HTTPException(status_code=500, detail=f"替换文件失败: {str(e)}")
         
 
-@app.post("/kb/chat")
+@app.post(
+    "/kb/chat",
+    summary="与知识库对话",
+    tags=["chat"],
+)
 async def chat_with_knowledge_base(query: ChatQuery):
     """与知识库对话"""
     try:
@@ -1172,7 +1181,11 @@ async def chat_with_knowledge_base(query: ChatQuery):
         print(f"{error_msg}\n{error_trace}")
         return {"status": "error", "message": error_msg}
 
-@app.post("/kb/chat_stream")
+@app.post(
+    "/kb/chat_stream",
+    summary="与知识库对话（流式响应）",
+    tags=["chat"],
+)
 async def chat_with_knowledge_base_stream(query: ChatQuery):
     """与知识库对话（流式响应）"""
     from fastapi.responses import StreamingResponse
