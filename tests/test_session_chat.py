@@ -378,5 +378,39 @@ class TestSessionOpenAPITags(unittest.TestCase):
         self.assertTrue(session_tag["description"])
 
 
+class TestChatOpenAPITags(unittest.TestCase):
+    def setUp(self):
+        self.client = TestClient(app_module.app)
+
+    def test_chat_endpoints_use_chat_tag(self):
+        paths = self.client.get("/openapi.json").json()["paths"]
+        self.assertEqual(paths["/kb/chat"]["post"]["tags"], ["chat"])
+        self.assertEqual(paths["/kb/chat_stream"]["post"]["tags"], ["chat"])
+
+    def test_chat_endpoints_have_summaries(self):
+        paths = self.client.get("/openapi.json").json()["paths"]
+        operations = [
+            paths["/kb/chat"]["post"],
+            paths["/kb/chat_stream"]["post"],
+        ]
+        for operation in operations:
+            self.assertIsInstance(operation["summary"], str)
+            self.assertTrue(operation["summary"])
+
+    def test_openapi_defines_chat_tag(self):
+        tags = self.client.get("/openapi.json").json()["tags"]
+        chat_tag = next(tag for tag in tags if tag["name"] == "chat")
+        self.assertIsInstance(chat_tag["description"], str)
+        self.assertTrue(chat_tag["description"])
+
+    def test_session_tag_grouping_unaffected(self):
+        paths = self.client.get("/openapi.json").json()["paths"]
+        self.assertEqual(paths["/kb/session/stats"]["get"]["tags"], ["session"])
+        self.assertEqual(
+            paths["/kb/graph/{kb_name}/extract"]["post"]["tags"],
+            ["knowledge-graph"],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

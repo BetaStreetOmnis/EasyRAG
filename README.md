@@ -572,6 +572,7 @@ for item in data["data"]:
 - `DELETE /kb/session/history/{kb_name}/{session_id}` 可幂等清除会话历史；两个端点均不校验知识库是否存在。
 - `GET /kb/session/stats` 返回会话存储统计（会话数与消息总数）。
 - 这些会话管理端点在 OpenAPI 文档中归入 `session` 分组。
+- 对话端点 `/kb/chat` 与 `/kb/chat_stream` 在 OpenAPI 文档中归入 `chat` 分组。
 
 ```python
 from core.memory.session_store import InMemorySessionStore
