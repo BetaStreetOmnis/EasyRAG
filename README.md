@@ -204,6 +204,77 @@ curl -X DELETE "http://localhost:8028/kb/graph/my_kb"
 
 ---
 
+### 📋 API 端点总表
+
+下表覆盖当前全部 28 个公开端点；交互式文档见 `/docs`（Swagger UI），机器可读 Schema 见 `/openapi.json`。带 OpenAPI 分组的端点已按 Swagger 分组标注。
+
+#### 🗂️ 知识库管理
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/kb/create` | 创建新的知识库 |
+| `GET` | `/kb/list` | 获取所有知识库列表 |
+| `GET` | `/kb/info/{kb_name}` | 获取指定知识库的信息 |
+| `DELETE` | `/kb/delete/{kb_name}` | 删除指定的知识库；尽力联动清理知识图谱，响应包含 `graph_deleted` 字段 |
+| `GET` | `/kb/progress/{task_id}` | 获取任务处理进度 |
+| `POST` | `/kb/upload` | 上传文件到知识库 |
+| `POST` | `/kb/fix_dimension/{kb_name}` | 修复知识库的维度不匹配问题 |
+| `POST` | `/kb/set_importance` | 设置文件的重要性系数 |
+
+#### 📄 文件与文档管理
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/kb/files/{kb_name}` | 获取知识库中的所有文件 |
+| `GET` | `/kb/file/{kb_name}/{file_name}` | 获取知识库中特定文件的详细信息 |
+| `DELETE` | `/kb/file/{kb_name}/{file_name}` | 从知识库中删除指定文件 |
+| `POST` | `/kb/replace_file` | 替换知识库中的文件 |
+| `POST` | `/kb/delete_documents` | 根据过滤条件删除知识库中的文档 |
+
+#### 🔎 检索
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/kb/search` | 在知识库中搜索内容 |
+| `POST` | `/web/search` | 使用 You.com 联网检索作为外部检索源；未配置 API Key 或检索失败时优雅降级 |
+
+#### 🧰 工具
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/chunker/methods` | 获取所有可用的分块方法 |
+| `POST` | `/extract_text_from_file` | 从文件中提取文本，不进行分块 |
+
+#### 🕸️ 知识图谱 · OpenAPI 分组 `knowledge-graph`
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/kb/graph/{kb_name}/extract` | 从知识库文本构建知识图谱；详见知识图谱 API 章节 |
+| `GET` | `/kb/graph/{kb_name}` | 获取指定知识库的完整图谱；详见知识图谱 API 章节 |
+| `GET` | `/kb/graph/{kb_name}/entities` | 分页查询图谱实体；详见知识图谱 API 章节 |
+| `GET` | `/kb/graph/{kb_name}/entities/{entity_id}` | 查询实体详情及一度关系；详见知识图谱 API 章节 |
+| `GET` | `/kb/graph/{kb_name}/relations` | 分页查询图谱关系；详见知识图谱 API 章节 |
+| `DELETE` | `/kb/graph/{kb_name}` | 删除指定知识库的完整图谱；详见知识图谱 API 章节 |
+
+#### 🧠 会话记忆 · OpenAPI 分组 `session`
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/kb/session/history/{kb_name}/{session_id}` | 查询服务端会话历史 |
+| `DELETE` | `/kb/session/history/{kb_name}/{session_id}` | 清除服务端会话历史 |
+| `GET` | `/kb/session/stats` | 查询服务端会话存储统计 |
+
+#### 💬 对话 · OpenAPI 分组 `chat`
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/kb/chat` | 与知识库对话 |
+| `POST` | `/kb/chat_stream` | 与知识库对话（流式响应） |
+
+> 💡 端点如有变更，以 `/docs` 与 `/openapi.json` 为准。
+
+---
+
 ## 💻 系统要求
 
 | 项目 | 最低要求 | 推荐配置 | 高性能配置 |
