@@ -162,6 +162,77 @@ graph LR
 
 ---
 
+### 📋 API Endpoint Reference
+
+The following table covers all 28 current public endpoints. Interactive documentation is available at `/docs` (Swagger UI), and the machine-readable schema is available at `/openapi.json`. Endpoints with OpenAPI tags are grouped according to their Swagger groups.
+
+#### 🗂️ Knowledge Base Management
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/kb/create` | Create a new knowledge base |
+| `GET` | `/kb/list` | List all knowledge bases |
+| `GET` | `/kb/info/{kb_name}` | Get information about a specified knowledge base |
+| `DELETE` | `/kb/delete/{kb_name}` | Delete a specified knowledge base; performs best-effort cleanup of its knowledge graph, and the response includes a `graph_deleted` field |
+| `GET` | `/kb/progress/{task_id}` | Get the processing progress of a task |
+| `POST` | `/kb/upload` | Upload a file to a knowledge base |
+| `POST` | `/kb/fix_dimension/{kb_name}` | Fix a dimension mismatch in a knowledge base |
+| `POST` | `/kb/set_importance` | Set a file's importance coefficient |
+
+#### 📄 Files & Document Management
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/kb/files/{kb_name}` | Get all files in a knowledge base |
+| `GET` | `/kb/file/{kb_name}/{file_name}` | Get detailed information about a specific file in a knowledge base |
+| `DELETE` | `/kb/file/{kb_name}/{file_name}` | Delete a specified file from a knowledge base |
+| `POST` | `/kb/replace_file` | Replace a file in a knowledge base |
+| `POST` | `/kb/delete_documents` | Delete documents from a knowledge base based on filter conditions |
+
+#### 🔎 Retrieval
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/kb/search` | Search content in a knowledge base |
+| `POST` | `/web/search` | Use You.com web search as an external retrieval source; gracefully degrades when the API key is not configured or the search fails |
+
+#### 🧰 Tools
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/chunker/methods` | Get all available chunking methods |
+| `POST` | `/extract_text_from_file` | Extract text from a file without chunking |
+
+#### 🕸️ Knowledge Graph · OpenAPI group `knowledge-graph`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/kb/graph/{kb_name}/extract` | Build a knowledge graph from knowledge base text; see the Knowledge Graph API section in the Chinese README or `/docs` |
+| `GET` | `/kb/graph/{kb_name}` | Get the complete graph for a specified knowledge base; see the Knowledge Graph API section in the Chinese README or `/docs` |
+| `GET` | `/kb/graph/{kb_name}/entities` | Query graph entities with pagination; see the Knowledge Graph API section in the Chinese README or `/docs` |
+| `GET` | `/kb/graph/{kb_name}/entities/{entity_id}` | Query entity details and its one-degree relationships; see the Knowledge Graph API section in the Chinese README or `/docs` |
+| `GET` | `/kb/graph/{kb_name}/relations` | Query graph relations with pagination; see the Knowledge Graph API section in the Chinese README or `/docs` |
+| `DELETE` | `/kb/graph/{kb_name}` | Delete the complete graph for a specified knowledge base; see the Knowledge Graph API section in the Chinese README or `/docs` |
+
+#### 🧠 Session Memory · OpenAPI group `session`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/kb/session/history/{kb_name}/{session_id}` | Query server-side session history |
+| `DELETE` | `/kb/session/history/{kb_name}/{session_id}` | Clear server-side session history |
+| `GET` | `/kb/session/stats` | Query server-side session storage statistics |
+
+#### 💬 Chat · OpenAPI group `chat`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/kb/chat` | Chat with a knowledge base |
+| `POST` | `/kb/chat_stream` | Chat with a knowledge base (streaming responses) |
+
+> 💡 For the latest endpoint changes, `/docs` and `/openapi.json` are the source of truth.
+
+---
+
 ## 💻 System Requirements
 
 | Item | Minimum | Recommended | High Performance |
@@ -850,4 +921,4 @@ Thanks to the following open-source projects for their support:
 
 [⬆️ Back to Top](#-easyrag---a-lightweight-local-knowledge-base-enhancement-system)
 
-</div> 
+</div>
