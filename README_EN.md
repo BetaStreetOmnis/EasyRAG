@@ -160,6 +160,46 @@ graph LR
 </tr>
 </table>
 
+### 🕸️ Knowledge Graph API (Experimental)
+
+Performs LLM-based entity and relation extraction on text already stored in a knowledge base, then builds and queries a persistent knowledge graph in SQLite.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/kb/graph/{kb_name}/extract` | Build a graph from knowledge base text; `max_chunks` defaults to `0` (all chunks); returns `404` if the knowledge base does not exist and `400` if no vector collection exists |
+| `GET` | `/kb/graph/{kb_name}` | Get the complete graph; returns `404` if the graph does not exist |
+| `GET` | `/kb/graph/{kb_name}/entities` | Query entities with pagination; supports `type`, `name`, `limit` (`1-500`, default `100`), and `offset` |
+| `GET` | `/kb/graph/{kb_name}/entities/{entity_id}` | Get entity details and its one-degree relationships; supports `direction=in|out|both` (default `both`) |
+| `GET` | `/kb/graph/{kb_name}/relations` | Query relations with pagination; supports `entity_id`, `type`, `limit`, and `offset` |
+| `DELETE` | `/kb/graph/{kb_name}` | Delete the complete graph; returns `404` if the graph does not exist |
+
+> 💡 When deleting a knowledge base, `DELETE /kb/delete/{kb_name}` makes a best-effort attempt to clean up the graph, and its response includes the `graph_deleted` field.
+
+```bash
+# 1️⃣ Build the knowledge graph (max_chunks=0 means full)
+curl -X POST "http://localhost:8028/kb/graph/my_kb/extract?max_chunks=0"
+
+# 2️⃣ Query graph entities with pagination
+curl "http://localhost:8028/kb/graph/my_kb/entities?limit=20&offset=0"
+
+# 3️⃣ Delete the complete graph for a specified knowledge base
+curl -X DELETE "http://localhost:8028/kb/graph/my_kb"
+```
+
+#### 📋 Response Models & OpenAPI Examples
+
+Graph endpoint return values are strongly typed by 9 Pydantic response models:
+
+| Response Model | Purpose |
+|----------------|---------|
+| `GraphEntityResponse` / `GraphRelationResponse` | A single entity / relation |
+| `GraphDataResponse` / `GraphDeleteResponse` | A complete graph / deletion result |
+| `GraphEntityListResponse` / `GraphRelationListResponse` | An entity / relation list |
+| `GraphEntityDetailResponse` | Entity details and its one-degree relationships |
+| `GraphBuildStats` / `GraphBuildResponse` | Build statistics / build result |
+
+After starting the service, Swagger UI (`/docs`) shows each endpoint's automatically generated Schema and a realistic Chinese "Example Value"; the raw Schema is available from `/openapi.json`. Example values are for documentation display only and do not affect runtime serialization behavior.
+
 ---
 
 ### 📋 API Endpoint Reference
@@ -207,12 +247,12 @@ The following table covers all 28 current public endpoints. Interactive document
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/kb/graph/{kb_name}/extract` | Build a knowledge graph from knowledge base text; see the Knowledge Graph API section in the Chinese README or `/docs` |
-| `GET` | `/kb/graph/{kb_name}` | Get the complete graph for a specified knowledge base; see the Knowledge Graph API section in the Chinese README or `/docs` |
-| `GET` | `/kb/graph/{kb_name}/entities` | Query graph entities with pagination; see the Knowledge Graph API section in the Chinese README or `/docs` |
-| `GET` | `/kb/graph/{kb_name}/entities/{entity_id}` | Query entity details and its one-degree relationships; see the Knowledge Graph API section in the Chinese README or `/docs` |
-| `GET` | `/kb/graph/{kb_name}/relations` | Query graph relations with pagination; see the Knowledge Graph API section in the Chinese README or `/docs` |
-| `DELETE` | `/kb/graph/{kb_name}` | Delete the complete graph for a specified knowledge base; see the Knowledge Graph API section in the Chinese README or `/docs` |
+| `POST` | `/kb/graph/{kb_name}/extract` | Build a knowledge graph from knowledge base text; see the Knowledge Graph API section above |
+| `GET` | `/kb/graph/{kb_name}` | Get the complete graph for a specified knowledge base; see the Knowledge Graph API section above |
+| `GET` | `/kb/graph/{kb_name}/entities` | Query graph entities with pagination; see the Knowledge Graph API section above |
+| `GET` | `/kb/graph/{kb_name}/entities/{entity_id}` | Query entity details and its one-degree relationships; see the Knowledge Graph API section above |
+| `GET` | `/kb/graph/{kb_name}/relations` | Query graph relations with pagination; see the Knowledge Graph API section above |
+| `DELETE` | `/kb/graph/{kb_name}` | Delete the complete graph for a specified knowledge base; see the Knowledge Graph API section above |
 
 #### 🧠 Session Memory · OpenAPI group `session`
 
