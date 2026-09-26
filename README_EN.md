@@ -258,9 +258,9 @@ The following table covers all 28 current public endpoints. Interactive document
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/kb/session/history/{kb_name}/{session_id}` | Query server-side session history |
-| `DELETE` | `/kb/session/history/{kb_name}/{session_id}` | Clear server-side session history |
-| `GET` | `/kb/session/stats` | Query server-side session storage statistics |
+| `GET` | `/kb/session/history/{kb_name}/{session_id}` | Query server-side session history; see the Server-side Session Storage section below |
+| `DELETE` | `/kb/session/history/{kb_name}/{session_id}` | Clear server-side session history; see the Server-side Session Storage section below |
+| `GET` | `/kb/session/stats` | Query server-side session storage statistics; see the Server-side Session Storage section below |
 
 #### 💬 Chat · OpenAPI group `chat`
 
@@ -614,6 +614,43 @@ for item in data["data"]:
 ```
 > Without `YDC_API_KEY`, the endpoint returns `{"status": "success", "message": "...联网检索未启用", "data": []}` and other features are unaffected.
 > Do not commit your real key to the repo; keep it in an untracked environment variable or local `.env`.
+
+### Conversation History Windowing
+
+- By default, the server retains only the last 10 complete conversation turns and truncates any individual message longer than 8000 characters.
+- Filtering, pairing, and windowing are handled consistently by `trim_history()` in `core/memory/history_window.py`.
+- Both `/kb/chat` and `/kb/chat_stream` use this behavior, preventing model prompts from growing indefinitely during long conversations.
+- The optional request fields `history_max_turns` (1-100) and `history_max_chars` (100-100000) override the number of retained turns and the maximum length of an individual message, respectively.
+- When these fields are omitted, the default values remain 10 turns and 8000 characters.
+
+### Server-side Session Storage (Experimental)
+
+- `core/memory/session_store.py` provides a thread-safe, in-memory session store.
+- It includes LRU session eviction and a per-session message limit; data is not retained after the process restarts.
+- `/kb/chat` and `/kb/chat_stream` accept an optional `session_id` (1-128 characters), with history isolated by `kb_name + session_id`.
+- When `session_id` is provided, the server-side session is the single source of truth: the request body's `history` is ignored, and the history-window parameters are also applied when it is read.
+- The current turn's `user` and final `assistant` messages are appended only after the request completes successfully; failures, exceptions, and interrupted streams are not written.
+- When `session_id` is omitted or set to `null`, the original client-supplied `history` behavior is fully preserved.
+- Session data exists only in the memory of the current API process and is lost on restart; this capability is currently experimental.
+- `GET /kb/session/history/{kb_name}/{session_id}` returns the session history and returns an empty list when the session does not exist.
+- `DELETE /kb/session/history/{kb_name}/{session_id}` idempotently clears session history; neither endpoint validates that the knowledge base exists.
+- `GET /kb/session/stats` returns session-storage statistics (the number of sessions and total messages).
+- These session-management endpoints are grouped under `session` in the OpenAPI documentation.
+- The `/kb/chat` and `/kb/chat_stream` chat endpoints are grouped under `chat` in the OpenAPI documentation.
+
+```python
+from core.memory.session_store import InMemorySessionStore
+
+store = InMemorySessionStore()
+store.append("kb", "session-id", "user", "Hello")
+history = store.get_history("kb", "session-id")
+```
+
+```bash
+curl http://localhost:8028/kb/session/history/kb/session-id
+curl -X DELETE http://localhost:8028/kb/session/history/kb/session-id
+curl http://localhost:8028/kb/session/stats
+```
 
 ### 🔧 Advanced Configuration
 
