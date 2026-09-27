@@ -952,6 +952,32 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
+## 🔧 Development and Verification
+
+If you would like to contribute code to EasyRAG, please make sure it passes code verification.
+
+### ✅ Run Verification
+
+```bash
+# Run all validations (Python + frontend)
+./validate.sh
+
+# Verify Python code only
+./validate.sh python
+
+# Verify frontend code only
+./validate.sh frontend
+```
+
+### 📋 Verification Contents
+
+- **Python**: Check code style with flake8
+- **JavaScript**: Check code style with ESLint
+
+> 💡 For more details, please refer to [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
+
 ## 🤝 Contribution Guide
 
 We welcome all forms of contributions!
