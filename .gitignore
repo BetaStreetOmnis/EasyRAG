@@ -76,3 +76,8 @@ git_cleanup.ps1
 # Node.js / Frontend dependencies
 # ------------------------------------------------------------------------------
 node_modules/
+
+# Playwright 测试产物 (E2E Test Artifacts)
+# ------------------------------------------------------------------------------
+test-results/
+playwright-report/
