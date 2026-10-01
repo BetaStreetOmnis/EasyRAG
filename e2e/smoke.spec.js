@@ -35,3 +35,35 @@ test('导航冒烟：切换主导航区块', async ({ page }) => {
 
   expect(pageErrors).toHaveLength(0);
 });
+
+test('无后端降级冒烟：知识库列表请求失败不破坏界面', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
+
+  const initialKbListFailure = page.waitForResponse(
+    (response) => response.url().includes('/kb/list')
+  );
+
+  await page.goto('/');
+  await initialKbListFailure;
+
+  const kbManagementSection = page.locator('#kb-management');
+  await expect(kbManagementSection).toBeVisible();
+  await expect(kbManagementSection).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+
+  const failureRow = page.locator('#kb-list-table tbody tr');
+  await expect(failureRow).toHaveCount(1);
+  await expect(failureRow.locator('td')).toHaveText('加载知识库列表失败');
+
+  const refreshKbListFailure = page.waitForResponse(
+    (response) => response.url().includes('/kb/list')
+  );
+  await page.locator('#refresh-kb-list').click();
+  await refreshKbListFailure;
+
+  await expect(kbManagementSection).toBeVisible();
+  await expect(failureRow).toHaveCount(1);
+  await expect(failureRow.locator('td')).toHaveText('加载知识库列表失败');
+
+  expect(pageErrors).toHaveLength(0);
+});
