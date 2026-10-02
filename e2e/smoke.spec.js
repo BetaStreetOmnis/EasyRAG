@@ -1,5 +1,33 @@
 import { expect, test } from '@playwright/test';
 
+test('主题切换：更新主题状态并保持界面渲染', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
+
+  await page.goto('/');
+
+  const themeToggle = page.locator('#theme-toggle');
+  await expect(page.locator('body')).not.toHaveClass(/dark-theme/);
+  await expect(themeToggle.locator('.bx-sun')).toBeVisible();
+
+  await themeToggle.click();
+  await expect(page.locator('body')).toHaveClass(/dark-theme/);
+  await expect(themeToggle.locator('.bx-moon')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('theme'))).toBe('dark');
+
+  const sidebar = page.locator('aside');
+  await expect(sidebar).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'EasyRAG' })).toBeVisible();
+
+  await themeToggle.click();
+  await expect(page.locator('body')).not.toHaveClass(/dark-theme/);
+  await expect(themeToggle.locator('.bx-sun')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('theme'))).toBe('light');
+
+  await expect(sidebar).toBeVisible();
+  expect(pageErrors).toHaveLength(0);
+});
+
 test('页面冒烟：标题与主导航渲染', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error));
