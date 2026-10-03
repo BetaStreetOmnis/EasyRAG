@@ -95,3 +95,42 @@ test('无后端降级冒烟：知识库列表请求失败不破坏界面', async
 
   expect(pageErrors).toHaveLength(0);
 });
+
+test('无后端降级：上传表单缺知识库时仅 toast 提示且界面不破坏', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
+
+  const initialKbListFailure = page.waitForResponse(
+    (response) => response.url().includes('/kb/list')
+  );
+
+  await page.goto('/');
+  await initialKbListFailure;
+
+  await page.locator('.sidebar nav a[href="#file-management"]').click();
+
+  const fileManagementSection = page.locator('#file-management');
+  await expect(fileManagementSection).toBeVisible();
+  await expect(fileManagementSection).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  await expect(page.locator('#kb-management')).not.toHaveClass(/(?:^|\s)active(?:\s|$)/);
+
+  await page.locator('#files-to-upload').setInputFiles({
+    name: 'sample.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('easyrag step6')
+  });
+  await expect(page.locator('#upload-kb-select option')).toHaveCount(0);
+
+  await page.locator('#upload-file-form').evaluate((form) => {
+    form.noValidate = true;
+  });
+  await page.locator('#upload-file-form button[type="submit"]').click();
+  await expect(page.locator('.toast.warning .toast-message')).toHaveText('请选择知识库和文件');
+
+  await expect(page.locator('#upload-status')).toHaveText('');
+  await expect(page.locator('#upload-progress-container')).toBeHidden();
+  await expect(fileManagementSection).toBeVisible();
+  await expect(fileManagementSection).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+
+  expect(pageErrors).toHaveLength(0);
+});
