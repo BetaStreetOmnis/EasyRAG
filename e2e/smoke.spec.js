@@ -134,3 +134,41 @@ test('无后端降级：上传表单缺知识库时仅 toast 提示且界面不�
 
   expect(pageErrors).toHaveLength(0);
 });
+
+test('无后端降级：创建知识库表单空名称仅 toast 提示且界面不破坏', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
+
+  const initialKbListFailure = page.waitForResponse(
+    (response) => response.url().includes('/kb/list')
+  );
+
+  await page.goto('/');
+  await initialKbListFailure;
+
+  const kbManagementSection = page.locator('#kb-management');
+  const createKbForm = page.locator('#create-kb-form');
+  const kbNameInput = page.locator('#kb-name');
+  await expect(createKbForm).toBeVisible();
+  await expect(kbNameInput).toBeVisible();
+  await expect(kbNameInput).toHaveValue('');
+
+  const createRequests = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/kb/create')) {
+      createRequests.push(request);
+    }
+  });
+
+  await createKbForm.evaluate((form) => {
+    form.noValidate = true;
+  });
+  await createKbForm.locator('button[type="submit"]').click();
+  await expect(page.locator('.toast.warning .toast-message')).toHaveText('知识库名称不能为空');
+
+  await expect(kbNameInput).toBeVisible();
+  await expect(kbManagementSection).toBeVisible();
+  await expect(kbManagementSection).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  expect(createRequests).toHaveLength(0);
+  expect(pageErrors).toHaveLength(0);
+});
