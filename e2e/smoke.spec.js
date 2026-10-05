@@ -172,3 +172,37 @@ test('无后端降级：创建知识库表单空名称仅 toast 提示且界面�
   expect(createRequests).toHaveLength(0);
   expect(pageErrors).toHaveLength(0);
 });
+
+test('无后端降级：删除知识库未选择时仅 toast 提示且界面不破坏', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
+
+  const initialKbListFailure = page.waitForResponse(
+    (response) => response.url().includes('/kb/list')
+  );
+
+  await page.goto('/');
+  await initialKbListFailure;
+
+  const kbManagementSection = page.locator('#kb-management');
+  const deleteKbSelect = page.locator('#delete-kb-select');
+  await expect(deleteKbSelect).toBeVisible();
+  await expect(deleteKbSelect).toHaveValue('');
+  await expect(page.locator('#delete-kb-btn')).toBeVisible();
+
+  const deleteRequests = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/kb/delete')) {
+      deleteRequests.push(request);
+    }
+  });
+
+  await page.locator('#delete-kb-btn').click();
+  await expect(page.locator('.toast.warning .toast-message')).toHaveText('请选择要删除的知识库');
+
+  await expect(deleteKbSelect).toBeVisible();
+  await expect(kbManagementSection).toBeVisible();
+  await expect(kbManagementSection).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  expect(deleteRequests).toHaveLength(0);
+  expect(pageErrors).toHaveLength(0);
+});
