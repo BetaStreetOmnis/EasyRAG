@@ -206,3 +206,48 @@ test('无后端降级：删除知识库未选择时仅 toast 提示且界面不�
   expect(deleteRequests).toHaveLength(0);
   expect(pageErrors).toHaveLength(0);
 });
+
+test('无后端降级：搜索表单空输入仅 toast 提示且界面不破坏', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
+
+  const initialKbListFailure = page.waitForResponse(
+    (response) => response.url().includes('/kb/list')
+  );
+
+  await page.goto('/');
+  await initialKbListFailure;
+
+  await page.locator('.sidebar nav a[href="#kb-search"]').click();
+
+  const kbSearchSection = page.locator('#kb-search');
+  const searchForm = page.locator('#search-form');
+  const searchKbSelect = page.locator('#search-kb-select');
+  const searchQueryInput = page.locator('#search-query');
+  await expect(kbSearchSection).toBeVisible();
+  await expect(kbSearchSection).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  await expect(page.locator('#kb-management')).not.toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  await expect(searchForm).toBeVisible();
+  await expect(searchKbSelect).toBeVisible();
+  await expect(searchKbSelect).toHaveValue('');
+  await expect(searchQueryInput).toBeVisible();
+  await expect(searchQueryInput).toHaveValue('');
+
+  const searchRequests = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/kb/search')) {
+      searchRequests.push(request);
+    }
+  });
+
+  await searchForm.evaluate((form) => {
+    form.noValidate = true;
+  });
+  await searchForm.locator('button[type="submit"]').click();
+  await expect(page.locator('.toast.warning .toast-message')).toHaveText('请选择知识库并输入问题');
+
+  await expect(kbSearchSection).toBeVisible();
+  await expect(kbSearchSection).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  expect(searchRequests).toHaveLength(0);
+  expect(pageErrors).toHaveLength(0);
+});
