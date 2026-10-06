@@ -251,3 +251,30 @@ test('无后端降级：搜索表单空输入仅 toast 提示且界面不破坏'
   expect(searchRequests).toHaveLength(0);
   expect(pageErrors).toHaveLength(0);
 });
+
+test('导航闭环：切出后返回知识库管理恢复 active', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
+
+  const initialKbListFailure = page.waitForResponse(
+    (response) => response.url().includes('/kb/list')
+  );
+
+  await page.goto('/');
+  await initialKbListFailure;
+
+  await page.getByRole('link', { name: '文件管理' }).click();
+
+  const fileManagementSection = page.locator('#file-management');
+  await expect(fileManagementSection).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+
+  await page.getByRole('link', { name: '知识库管理' }).click();
+
+  const kbManagementSection = page.locator('#kb-management');
+  await expect(kbManagementSection).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  await expect(kbManagementSection).toBeVisible();
+  await expect(page.locator('.sidebar nav a[href="#kb-management"]')).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  await expect(fileManagementSection).not.toHaveClass(/(?:^|\s)active(?:\s|$)/);
+
+  expect(pageErrors).toHaveLength(0);
+});
