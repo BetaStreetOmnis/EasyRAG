@@ -846,7 +846,7 @@ Thanks to the following open-source projects for their support:
 
 **Made with ❤️ by the EasyRAG Team**
 
-**🔗 Ecosystem Project**: [DocuGen - AI Document Generation](https://github.com/BetaStreetOmnis/DocuGen) | [Try DocuGen Online](http://150.138.81.55:8080/)
+**🔗 Ecosystem Project**: [DocuGen - AI Document Generation](https://github.com/BetaStreetOmnis/DocuGen) | [Try DocuGen Online](http://170.106.190.193/docugen/)
 
 [⬆️ Back to Top](#-easyrag---a-lightweight-local-knowledge-base-enhancement-system)
 
