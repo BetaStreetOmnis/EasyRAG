@@ -883,7 +883,7 @@ cp -r /path/to/backup/knowledge_bases/ data/
 
 **Made with ❤️ by EasyRAG Team**
 
-**🔗 生态项目**: [DocuGen - AI文档生成](https://github.com/BetaStreetOmnis/DocuGen) | [在线体验DocuGen](http://150.138.81.55:8080/)
+**🔗 生态项目**: [DocuGen - AI文档生成](https://github.com/BetaStreetOmnis/DocuGen) | [在线体验DocuGen](http://170.106.190.193/docugen/)
 
 [⬆️ 回到顶部](#-easyrag---轻量级本地知识库增强系统)
 
