@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint \"static/**/*.js\" \"vite.config.js\"",
+    "lint": "eslint \"**/*.{js,mjs}\" \"vite.config.js\" --max-warnings 0",
     "lint:fix": "eslint static/**/*.js --fix",
     "validate": "npm run lint"
   },
