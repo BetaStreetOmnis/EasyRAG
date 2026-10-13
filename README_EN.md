@@ -419,6 +419,32 @@ Once deployed, you can access the service by visiting the following address in y
 
 ---
 
+## 🧪 Frontend Smoke Tests (Playwright)
+
+This repository includes a Playwright-based frontend smoke test suite covering knowledge base retrieval, knowledge base management (including successful and failed file uploads), application management (navigation/add/cancel), and basic page rendering.
+
+**Prerequisites**
+
+- Node.js 18+
+- Run `npm ci` to install dependencies
+
+```bash
+# Build the frontend static assets
+npm run build
+
+# Run the smoke tests (equivalent to npx playwright test)
+npm run test:smoke
+```
+
+`playwright.config.js` automatically starts the service with Vite preview at `127.0.0.1:4173`, so no manual startup is required.
+
+Current test suite size: 4 spec files / 14 test cases (`smoke` / `kb-search` / `kb-management` / `app-management`).
+
+---
+
+## 📖 Usage Instructions
+
+### 🏗️ Creating a Knowledge Base
 ## 📖 Usage Instructions
 
 ### 🏗️ Creating a Knowledge Base

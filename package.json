@@ -10,9 +10,11 @@
     "preview": "vite preview",
     "lint": "eslint \"frontend/**/*.js\" \"vite.config.js\"",
     "lint:fix": "eslint frontend/**/*.js --fix",
+    "test:smoke": "playwright test",
     "validate": "npm run lint"
   },
   "devDependencies": {
+    "@playwright/test": "1.57.0",
     "eslint": "^10.0.2",
     "vite": "^7.3.1"
   },
